@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mangoauth
+    username: postgres
+    password: postgres
+  jpa:
+    generate-ddl: false
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+flyway:
+  url: jdbc:postgresql://localhost:5432/mangoauth
+  schemas: public
+  user: postgres
+  password: postgres
