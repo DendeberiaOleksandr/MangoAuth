@@ -35,7 +35,7 @@ public class Client {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "apiKey")
+    @Column(name = "api_key")
     private String apiKey;
 
     @Column(name = "api_secret")

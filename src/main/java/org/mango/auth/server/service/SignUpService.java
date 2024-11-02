@@ -1,4 +1,9 @@
-package org.mango.auth.server.service.impl;
+package org.mango.auth.server.service;
 
-public class SignUpService {
+import org.mango.auth.server.dto.SignUpRequest;
+
+public interface SignUpService {
+
+    void signUp(SignUpRequest signUpRequest);
+
 }

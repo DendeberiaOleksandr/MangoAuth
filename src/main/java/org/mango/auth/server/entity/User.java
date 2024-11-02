@@ -35,7 +35,7 @@ public class User {
     @GeneratedValue
     private UUID id;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email", nullable = false)
     private String email;
 
     @Column(name = "first_name")

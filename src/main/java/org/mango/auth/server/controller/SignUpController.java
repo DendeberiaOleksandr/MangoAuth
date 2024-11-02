@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/sign-up")
 @Validated
 @RequiredArgsConstructor
-public class UserController {
+public class SignUpController {
 
     private final SignUpService signUpService;
 
