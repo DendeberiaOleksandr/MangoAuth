@@ -9,8 +9,8 @@ public interface UserService {
 
     Optional<User> findByEmail(String email);
 
-    Optional<User> findByEmailAndClientId(String email, UUID clientId);
-
     User save(User user);
+
+    void deleteAll();
 
 }

@@ -7,6 +7,8 @@ import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.exception.UserAlreadyExistsException;
+import org.mango.auth.server.mapper.UserClientRoleMapper;
+import org.mango.auth.server.mapper.UserMapper;
 import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.SignUpService;
 import org.mango.auth.server.service.UserClientRoleService;
@@ -25,39 +27,28 @@ public class SignUpServiceImpl implements SignUpService {
     private final UserService userService;
     private final UserClientRoleService userClientRoleService;
     private final ClientService clientService;
+    private final UserMapper userMapper;
+    private final UserClientRoleMapper userClientRoleMapper;
 
 
     @Override
     public void signUp(SignUpRequest signUpRequest) {
         UUID clientId = signUpRequest.clientId();
         String email = signUpRequest.email();
-        String firstName = signUpRequest.firstName();
-        String lastName = signUpRequest.lastName();
-
-        Client client = clientService.getById(clientId);
 
         Optional<UserClientRole> userClientRoleOptional = userClientRoleService
                 .findByUser_EmailAndClient_Id(email, clientId);
-
         if (userClientRoleOptional.isPresent()) {
             throw new UserAlreadyExistsException("User is already registered by email: %s in client: %s"
                     .formatted(email, clientId.toString()));
         }
 
-        String password = passwordEncoder.encode(signUpRequest.password());
+        Client client = clientService.getById(clientId);
 
-        User user = User.builder()
-                .password(password)
-                .firstName(firstName)
-                .lastName(lastName)
-                .build();
-
+        User user = userMapper.map(signUpRequest, passwordEncoder);
         userService.save(user);
 
-        userClientRoleService.save(UserClientRole.builder()
-                .client(client)
-                .user(user)
-                .role(Role.USER)
-                .build());
+        UserClientRole userClientRole = userClientRoleMapper.map(client, user, Role.USER);
+        userClientRoleService.save(userClientRole);
     }
 }

@@ -29,8 +29,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Optional<User> findByEmailAndClientId(String email, UUID clientId) {
-        return userRepository.findByEmailAndId(email,clientId);
+    @Transactional
+    public void deleteAll() {
+        userRepository.deleteAll();
     }
 }

@@ -21,11 +21,17 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
         return userClientRoleRepository.findByUser_EmailAndClient_Id(email, clientId);
     }
 
-    @Transactional
+
     @Override
+    @Transactional
     public UserClientRole save(UserClientRole userClientRole) {
         return userClientRoleRepository.save(userClientRole);
     }
 
+    @Override
+    @Transactional
+    public void deleteAll() {
+        userClientRoleRepository.deleteAll();
+    }
 
 }

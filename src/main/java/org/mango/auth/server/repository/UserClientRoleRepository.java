@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface UserClientRoleRepository extends JpaRepository<UserClientRole, Long> {
     Optional<UserClientRole> findByUser_EmailAndClient_Id(String email, UUID clientId);
+    void deleteAll();
 }
