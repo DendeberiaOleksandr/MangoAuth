@@ -1,6 +1,6 @@
 package org.mango.auth.server.mapper;
 
-import org.mango.auth.server.dto.SignUpRequest;
+import org.mango.auth.server.dto.SignUp.SignUpRequest;
 import org.mango.auth.server.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

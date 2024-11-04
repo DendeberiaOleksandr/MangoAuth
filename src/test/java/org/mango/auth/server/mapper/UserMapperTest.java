@@ -2,7 +2,7 @@ package org.mango.auth.server.mapper;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mango.auth.server.dto.SignUpRequest;
+import org.mango.auth.server.dto.SignUp.SignUpRequest;
 import org.mango.auth.server.entity.User;
 import org.mapstruct.factory.Mappers;
 import org.mockito.junit.jupiter.MockitoExtension;

@@ -7,6 +7,6 @@ import java.util.UUID;
 
 public interface UserClientRoleService {
     Optional<UserClientRole> findByUser_EmailAndClient_Id(String email, UUID clientId);
-    UserClientRole save(UserClientRole userClientRole);
+    void save(UserClientRole userClientRole);
     void deleteAll();
 }

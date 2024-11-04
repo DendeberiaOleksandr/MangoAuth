@@ -24,8 +24,8 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     @Override
     @Transactional
-    public UserClientRole save(UserClientRole userClientRole) {
-        return userClientRoleRepository.save(userClientRole);
+    public void save(UserClientRole userClientRole) {
+        userClientRoleRepository.save(userClientRole);
     }
 
     @Override
