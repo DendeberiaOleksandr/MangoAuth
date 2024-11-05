@@ -3,19 +3,24 @@ package org.mango.auth.server.service.impl;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.dto.token.TokenDto;
 import org.mango.auth.server.dto.token.TokenResponse;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.service.JwtService;
+import org.mango.auth.server.service.UserClientRoleService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
 
     @Value("${app.token.secret}")
@@ -30,35 +35,34 @@ public class JwtServiceImpl implements JwtService {
     @Value("${app.token.issuer:http://localhost:8080}")
     private String issuer;
 
+    private final UserClientRoleService userClientRoleService;
+
     @Override
     public TokenResponse generateTokens(User user) {
         Date now = new Date();
+        UserClientRole userClientRole = userClientRoleService.findByUser(user);
 
         Date accessTokenExpDate = new Date(now.getTime() + this.accessTokenExpiration);
         TokenDto accessToken = new TokenDto(
-                generateToken(user, now, accessTokenExpDate),
+                generateToken(user, now, accessTokenExpDate, userClientRole),
                 accessTokenExpDate.getTime(),
                 now.getTime());
 
 
         Date refreshTokenExpDate = new Date(now.getTime() + this.refreshTokenExpiration);
         TokenDto refreshToken = new TokenDto(
-                generateToken(user, now, refreshTokenExpDate),
+                generateToken(user, now, refreshTokenExpDate, userClientRole),
                 refreshTokenExpDate.getTime(),
                 now.getTime());
 
-
-        Role role = user.getClientRoles().stream()
-                .findFirst()
-                .map(UserClientRole::getRole)
-                .orElse(null);
-
-        return new TokenResponse(user.getId(), user.getEmail(), role, accessToken, refreshToken);
+        return new TokenResponse(user.getId(), user.getEmail(), userClientRole.getRole(), accessToken, refreshToken);
     }
 
-    private String generateToken(User user, Date now, Date expiration) {
+    private String generateToken(User user, Date now, Date expiration, UserClientRole userClientRole) {
         return Jwts.builder()
                 .issuer(issuer)
+                .claim("CLIENT_ID", userClientRole.getClient().getId())
+                .claim("ROLE", userClientRole.getRole().name())
                 .subject(user.getEmail())
                 .issuedAt(now)
                 .expiration(expiration)

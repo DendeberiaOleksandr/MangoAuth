@@ -1,5 +1,6 @@
 package org.mango.auth.server.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.dto.token.TokenRequest;
 import org.mango.auth.server.dto.token.TokenResponse;
@@ -19,7 +20,7 @@ public class TokenController {
     private final TokenService tokenService;
 
     @PostMapping
-    public ResponseEntity<TokenResponse> generateToken(@RequestBody TokenRequest request) {
+    public ResponseEntity<TokenResponse> generateToken(@Valid @RequestBody TokenRequest request) {
         TokenResponse response = tokenService.generateToken(request);
         return ResponseEntity.ok(response);
     }

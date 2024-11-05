@@ -39,7 +39,7 @@ public class SignUpServiceImpl implements SignUpService {
         String email = signUpRequest.email();
 
         Optional<UserClientRole> userClientRoleOptional = userClientRoleService
-                .findByUser_EmailAndClient_Id(email, clientId);
+                .findByUserEmailAndClientId(email, clientId);
         if (userClientRoleOptional.isPresent()) {
             throw new UserAlreadyExistsException("User is already registered by email: %s in client: %s"
                     .formatted(email, clientId.toString()));

@@ -27,7 +27,7 @@ public class TokenServiceImpl implements TokenService {
 
 
     @Override
-    @Transactional(noRollbackFor = ValidationException.class)
+    @Transactional
     public TokenResponse generateToken(TokenRequest request){
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.email());
 
