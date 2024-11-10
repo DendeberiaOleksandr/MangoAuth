@@ -63,6 +63,21 @@ public class User {
     @Enumerated(value = EnumType.STRING)
     private UserStatus userStatus = UserStatus.UNVERIFIED;
 
+    @Column(name = "email_verification_code")
+    private String emailVerificationCode;
+
+    @Column(name = "email_verification_code_last_sent_at")
+    private LocalDateTime emailVerificationCodeLastSentAt;
+
+    @Column(name = "email_verification_code_sent_times")
+    private int emailVerificationCodeSentTimes;
+
+    @Column(name = "email_verification_code_last_entered_at")
+    private LocalDateTime emailVerificationCodeLastEnteredAt;
+
+    @Column(name = "email_verification_code_entered_times")
+    private int emailVerificationCodeEnteredTimes;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

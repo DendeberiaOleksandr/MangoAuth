@@ -37,7 +37,7 @@ public class EmailServiceImpl implements EmailService {
         return true;
     }
 
-    @Value("${spring.mail.username}")
+    @Value("${app.mail.username}")
     public void setFrom(String from) {
         this.from = from;
     }

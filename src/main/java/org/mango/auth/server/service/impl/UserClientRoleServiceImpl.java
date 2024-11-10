@@ -1,5 +1,6 @@
 package org.mango.auth.server.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
@@ -17,6 +18,13 @@ import java.util.UUID;
 public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     private final UserClientRoleRepository userClientRoleRepository;
+
+    @Transactional(readOnly = true)
+    @Override
+    public UserClientRole getByUserEmailAndClientId(String email, UUID clientId) {
+        return findByUser_EmailAndClient_Id(email, clientId)
+                .orElseThrow(() -> new EntityNotFoundException("UserClientRole not found by user email: %s and client id: %s".formatted(email, clientId.toString())));
+    }
 
     @Override
     @Transactional(readOnly = true)
