@@ -60,7 +60,12 @@ public class UserVerificationServiceImpl implements UserVerificationService {
     @Override
     public void sendVerificationEmail(SendUserVerificationEmailRequest request) {
         UserClientRole userClientRole = userClientRoleService.getByUserEmailAndClientId(request.getEmail(), request.getClientId());
+        sendVerificationEmail(userClientRole);
+    }
 
+    @Transactional
+    @Override
+    public void sendVerificationEmail(UserClientRole userClientRole) {
         User user = userClientRole.getUser();
 
         userVerificationValidator.validateBeforeSendEmail(user);

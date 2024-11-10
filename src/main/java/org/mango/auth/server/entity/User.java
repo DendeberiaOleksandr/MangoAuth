@@ -59,9 +59,9 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<UserClientRole> clientRoles = new ArrayList<>();
 
-    @Column(name = "user_status", nullable = false)
+    @Column(name = "user_status")
     @Enumerated(value = EnumType.STRING)
-    private UserStatus userStatus = UserStatus.UNVERIFIED;
+    private UserStatus userStatus;
 
     @Column(name = "email_verification_code")
     private String emailVerificationCode;
@@ -82,7 +82,6 @@ public class User {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        userStatus = UserStatus.UNVERIFIED;
     }
 
     @PreUpdate

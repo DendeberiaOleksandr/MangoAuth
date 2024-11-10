@@ -19,13 +19,6 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     private final UserClientRoleRepository userClientRoleRepository;
 
-    @Transactional(readOnly = true)
-    @Override
-    public UserClientRole getByUserEmailAndClientId(String email, UUID clientId) {
-        return findByUser_EmailAndClient_Id(email, clientId)
-                .orElseThrow(() -> new EntityNotFoundException("UserClientRole not found by user email: %s and client id: %s".formatted(email, clientId.toString())));
-    }
-
     @Override
     @Transactional(readOnly = true)
     public Optional<UserClientRole> findByUserEmailAndClientId(String email, UUID clientId) {
@@ -54,8 +47,8 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     @Override
     @Transactional
-    public void save(UserClientRole userClientRole) {
-        userClientRoleRepository.save(userClientRole);
+    public UserClientRole save(UserClientRole userClientRole) {
+        return userClientRoleRepository.save(userClientRole);
     }
 
     @Override

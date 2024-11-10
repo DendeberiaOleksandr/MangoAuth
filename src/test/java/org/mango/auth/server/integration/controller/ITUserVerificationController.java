@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID;
+import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.integration.util.TestUtil.USER_EMAIL;
 import static org.mango.auth.server.integration.util.TestUtil.USER_ID;
 import static org.mango.auth.server.util.ApiPaths.USER_API;
@@ -50,7 +50,7 @@ public class ITUserVerificationController extends ITBase {
         userService.save(user);
 
         String json = objectMapper.writeValueAsString(new UserVerificationRequest(
-                USER_EMAIL, CLIENT_ID, "code"
+                USER_EMAIL, CLIENT_ID_1, "code"
         ));
 
         mvc.perform(
@@ -73,7 +73,7 @@ public class ITUserVerificationController extends ITBase {
         userService.save(user);
 
         String json = objectMapper.writeValueAsString(new UserVerificationRequest(
-                USER_EMAIL, CLIENT_ID, "code"
+                USER_EMAIL, CLIENT_ID_1, "code"
         ));
 
         mvc.perform(
@@ -98,7 +98,7 @@ public class ITUserVerificationController extends ITBase {
         userService.save(user);
 
         String json = objectMapper.writeValueAsString(new UserVerificationRequest(
-                USER_EMAIL, CLIENT_ID, "code"
+                USER_EMAIL, CLIENT_ID_1, "code"
         ));
 
         mvc.perform(
@@ -121,7 +121,7 @@ public class ITUserVerificationController extends ITBase {
         userService.save(user);
 
         String json = objectMapper.writeValueAsString(new UserVerificationRequest(
-                USER_EMAIL, CLIENT_ID, "code"
+                USER_EMAIL, CLIENT_ID_1, "code"
         ));
 
         mvc.perform(
@@ -144,7 +144,7 @@ public class ITUserVerificationController extends ITBase {
         userService.save(user);
 
         String json = objectMapper.writeValueAsString(new SendUserVerificationEmailRequest(
-                USER_EMAIL, CLIENT_ID
+                USER_EMAIL, CLIENT_ID_1
         ));
 
         mvc.perform(
@@ -164,7 +164,7 @@ public class ITUserVerificationController extends ITBase {
         userService.save(user);
 
         String json = objectMapper.writeValueAsString(new SendUserVerificationEmailRequest(
-                USER_EMAIL, CLIENT_ID
+                USER_EMAIL, CLIENT_ID_1
         ));
 
         mvc.perform(
@@ -184,7 +184,7 @@ public class ITUserVerificationController extends ITBase {
         userService.save(user);
 
         String json = objectMapper.writeValueAsString(new SendUserVerificationEmailRequest(
-                USER_EMAIL, CLIENT_ID
+                USER_EMAIL, CLIENT_ID_1
         ));
 
         mvc.perform(
