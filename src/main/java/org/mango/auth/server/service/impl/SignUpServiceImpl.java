@@ -13,6 +13,7 @@ import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.SignUpService;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,19 +39,18 @@ public class SignUpServiceImpl implements SignUpService {
         UUID clientId = signUpRequest.clientId();
         String email = signUpRequest.email();
 
-        Optional<UserClientRole> userClientRoleOptional = userClientRoleService
-                .findByUserEmailAndClientId(email, clientId);
-        if (userClientRoleOptional.isPresent()) {
+        try {
+            userClientRoleService.findByUserEmailAndClientId(email, clientId);
             throw new UserAlreadyExistsException("User is already registered by email: %s in client: %s"
                     .formatted(email, clientId.toString()));
+        } catch (UsernameNotFoundException e) {
+            Client client = clientService.getById(clientId);
+
+            User user = userMapper.map(signUpRequest, passwordEncoder);
+            userService.save(user);
+
+            UserClientRole userClientRole = userClientRoleMapper.map(client, user, Role.USER);
+            userClientRoleService.save(userClientRole);
         }
-
-        Client client = clientService.getById(clientId);
-
-        User user = userMapper.map(signUpRequest, passwordEncoder);
-        userService.save(user);
-
-        UserClientRole userClientRole = userClientRoleMapper.map(client, user, Role.USER);
-        userClientRoleService.save(userClientRole);
     }
 }

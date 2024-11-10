@@ -5,6 +5,7 @@ import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.repository.UserClientRoleRepository;
 import org.mango.auth.server.service.UserClientRoleService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,14 +20,16 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<UserClientRole> findByUserEmailAndClientId(String email, UUID clientId) {
-        return userClientRoleRepository.findByUser_EmailAndClient_Id(email, clientId);
+    public UserClientRole findByUserEmailAndClientId(String email, UUID clientId) {
+        return userClientRoleRepository.findByUser_EmailAndClient_Id(email, clientId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found for the specified client"));
     }
 
     @Override
     @Transactional(readOnly = true)
     public UserClientRole findByUser(User user) {
-        return userClientRoleRepository.findByUser(user).orElseThrow(() -> new RuntimeException());
+        return userClientRoleRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("User client role not found"));
     }
 
 
