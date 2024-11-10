@@ -20,18 +20,29 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     @Override
     @Transactional(readOnly = true)
-    public UserClientRole findByUserEmailAndClientId(String email, UUID clientId) {
-        return userClientRoleRepository.findByUser_EmailAndClient_Id(email, clientId)
+    public Optional<UserClientRole> findByUserEmailAndClientId(String email, UUID clientId) {
+        return userClientRoleRepository.findByUser_EmailAndClient_Id(email, clientId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserClientRole getByUserEmailAndClientId(String email, UUID clientId) {
+        return findByUserEmailAndClientId(email, clientId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found for the specified client"));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserClientRole findByUser(User user) {
-        return userClientRoleRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("User client role not found"));
+    public Optional<UserClientRole> findByUser(User user) {
+        return userClientRoleRepository.findByUser(user);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UserClientRole getByUser(User user) {
+        return findByUser(user)
+                .orElseThrow(() -> new RuntimeException("User client role not found"));
+    }
 
     @Override
     @Transactional

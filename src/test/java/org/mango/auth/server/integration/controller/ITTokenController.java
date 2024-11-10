@@ -67,6 +67,41 @@ public class ITTokenController extends ITBase {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
+                .andExpect(jsonPath("$.accessToken.token").exists())
+                .andExpect(jsonPath("$.refreshToken.token").exists());
+    }
+
+    @Test
+    void whenValidCredentialsForOtherUser_thenSignInFails() throws Exception {
+        String jsonRequest = String.format("""
+            {
+                "clientId": "%s",
+                "email": "test@example.com",
+                "password": "password456"
+            }
+        """, TestUtil.CLIENT_ID_1);
+
+        mvc.perform(post(ApiPaths.TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                        .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void whenValidCredentialsForSecondUser_thenSignInSucceeds() throws Exception {
+        String jsonRequest = String.format("""
+            {
+                "clientId": "%s",
+                "email": "test@example.com",
+                "password": "password456"
+            }
+        """, TestUtil.CLIENT_ID_2);
+
+        mvc.perform(post(ApiPaths.TOKEN)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken.token").exists())
+                .andExpect(jsonPath("$.refreshToken.token").exists());
     }
 }

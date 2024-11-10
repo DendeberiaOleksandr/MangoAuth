@@ -3,17 +3,16 @@ package org.mango.auth.server.service.impl;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.dto.token.TokenDto;
 import org.mango.auth.server.dto.token.TokenResponse;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
-import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.service.JwtService;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Key;
 import java.util.Date;
@@ -38,9 +37,10 @@ public class JwtServiceImpl implements JwtService {
     private final UserClientRoleService userClientRoleService;
 
     @Override
+    @Transactional
     public TokenResponse generateTokens(User user) {
         Date now = new Date();
-        UserClientRole userClientRole = userClientRoleService.findByUser(user);
+        UserClientRole userClientRole = userClientRoleService.getByUser(user);
 
         Date accessTokenExpDate = new Date(now.getTime() + this.accessTokenExpiration);
         TokenDto accessToken = new TokenDto(
