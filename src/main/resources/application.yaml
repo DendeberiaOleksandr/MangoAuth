@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
   datasource:
     url: jdbc:postgresql://localhost:5432/mangoauth
     username: postgres

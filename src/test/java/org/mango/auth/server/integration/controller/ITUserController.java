@@ -1,89 +1,133 @@
 package org.mango.auth.server.integration.controller;
 
+import org.instancio.Instancio;
+import org.instancio.Select;
+import org.junit.jupiter.api.Test;
+import org.mango.auth.server.entity.Client;
+import org.mango.auth.server.entity.User;
+import org.mango.auth.server.entity.UserClientRole;
+import org.mango.auth.server.enums.Role;
+import org.mango.auth.server.integration.ITBase;
+import org.mango.auth.server.repository.ClientRepository;
+import org.mango.auth.server.repository.UserClientRoleRepository;
+import org.mango.auth.server.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.web.servlet.ResultActions;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import java.util.List;
+
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.emptyString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID;
+import static org.mango.auth.server.util.ApiPaths.USER_API;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.mango.auth.server.service.UserClientRoleService;
-import org.mango.auth.server.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.junit.jupiter.api.Test;
-
-
-@SpringBootTest
-@AutoConfigureMockMvc
-public class ITUserController {
+public class ITUserController extends ITBase {
 
     @Autowired
-    private MockMvc mockMvc;
+    private UserRepository userRepository;
     @Autowired
-    private UserClientRoleService userClientRoleService;
+    private UserClientRoleRepository userClientRoleRepository;
     @Autowired
-    private UserService userService;
-
-    @BeforeEach
-    public void setUp(){
-        userClientRoleService.deleteAll();
-        userService.deleteAll();
-    }
+    private ClientRepository clientRepository;
 
     @Test
-    void whenValidRequest_thenReturns200() throws Exception {
-        String jsonRequest = """
-            {
-                "clientId": "9c3c4b6a-d5f9-4d92-857e-55d44dcdeab9",
-                "email": "test@example.com",
-                "password": "password123",
-                "firstName": "John",
-                "lastName": "Doe"
-            }
-        """;
+    void searchUsers_whenClientIdNotProvided() throws Exception {
+        // given
+        final int page = 0;
+        final int size = 10;
 
-        mockMvc.perform(post("/api/v1/sign-up")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonRequest))
-                .andExpect(status().isOk());
-    }
+        // when
+        ResultActions result = mvc.perform(
+                        get(USER_API)
+                                .param("page", page + "")
+                                .param("size", size + "")
+                )
+                .andDo(print());
 
-    @Test
-    void whenInvalidEmail_thenReturns400() throws Exception {
-        String jsonRequest = """
-            {
-                "clientId": "9c3c4b6a-d5f9-4d92-857e-55d44dcdeab9",
-                "email": "invalid-email",
-                "password": "password123",
-                "firstName": "John",
-                "lastName": "Doe"
-            }
-        """;
-
-        mockMvc.perform(post("/api/v1/sign-up")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonRequest))
+        // then
+        result
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void whenInvalidPassword_thenReturns400() throws Exception {
-        String jsonRequest = """
-            {
-                "clientId": "9c3c4b6a-d5f9-4d92-857e-55d44dcdeab9",
-                "email": "test@example.com",
-                "password": "pa1",
-                "firstName": "John",
-                "lastName": "Doe"
-            }
-        """;
+    void searchUsers_whenUserExists() throws Exception {
+        // given
+        final int page = 0;
+        final int size = 10;
 
-        mockMvc.perform(post("/api/v1/sign-up")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonRequest))
-                .andExpect(status().isBadRequest());
+        UserClientRole savedUser = createUser();
+
+        // when
+        ResultActions result = mvc.perform(
+                        get(USER_API)
+                                .param("page", page + "")
+                                .param("size", size + "")
+                                .param("clientId", CLIENT_ID.toString())
+                )
+                .andDo(print());
+
+        // then
+        User user = savedUser.getUser();
+        result
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pageable.pageNumber", is(page)))
+                .andExpect(jsonPath("$.pageable.pageSize", is(size)))
+                .andExpect(jsonPath("$.content[0]", notNullValue()))
+                .andExpect(jsonPath("$.content[0].id", is(user.getId().toString())))
+                .andExpect(jsonPath("$.content[0].firstName", is(user.getFirstName())))
+                .andExpect(jsonPath("$.content[0].lastName", is(user.getLastName())))
+                .andExpect(jsonPath("$.content[0].email", is(user.getEmail())))
+                .andExpect(jsonPath("$.content[0].role", is(savedUser.getRole().name())))
+                .andExpect(jsonPath("$.content[0].userStatus", is(user.getUserStatus().name())))
+                .andExpect(jsonPath("$.content[0].registeredAt", not(emptyString())));
+    }
+
+    @Test
+    void searchUsers_whenUserExistsAndOffset() throws Exception {
+        // given
+        final int page = 1;
+        final int size = 10;
+
+        UserClientRole savedUser = createUser();
+
+        // when
+        ResultActions result = mvc.perform(
+                        get(USER_API)
+                                .param("page", page + "")
+                                .param("size", size + "")
+                                .param("clientId", CLIENT_ID.toString())
+                )
+                .andDo(print());
+
+        // then
+        result
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.pageable.pageNumber", is(page)))
+                .andExpect(jsonPath("$.pageable.pageSize", is(size)))
+                .andExpect(jsonPath("$.content", empty()));
+    }
+
+    private UserClientRole createUser() {
+        User user = Instancio.of(User.class)
+                .set(Select.field(User::getId), null)
+                .set(Select.field(User::getClientRoles), List.of())
+                .create();
+        userRepository.save(user);
+
+        Client client = clientRepository.findById(CLIENT_ID).get();
+
+        return userClientRoleRepository.save(UserClientRole.builder()
+                .role(Role.USER)
+                .client(client)
+                .user(user)
+                .build());
     }
 
 }
