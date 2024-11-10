@@ -1,4 +1,4 @@
-package org.mango.auth.server.dto;
+package org.mango.auth.server.dto.SignUp;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

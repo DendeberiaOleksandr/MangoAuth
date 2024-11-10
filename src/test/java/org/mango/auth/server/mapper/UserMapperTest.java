@@ -3,7 +3,7 @@ package org.mango.auth.server.mapper;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mango.auth.server.dto.SignUpRequest;
+import org.mango.auth.server.dto.SignUp.SignUpRequest;
 import org.mango.auth.server.dto.user.UserLightDto;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.enums.Role;

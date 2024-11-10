@@ -1,7 +1,7 @@
 package org.mango.auth.server.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import org.mango.auth.server.dto.SignUpRequest;
+import org.mango.auth.server.dto.SignUp.SignUpRequest;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
@@ -15,6 +15,7 @@ import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -32,17 +33,16 @@ public class SignUpServiceImpl implements SignUpService {
 
 
     @Override
+    @Transactional
     public void signUp(SignUpRequest signUpRequest) {
         UUID clientId = signUpRequest.clientId();
         String email = signUpRequest.email();
 
-        Optional<UserClientRole> userClientRoleOptional = userClientRoleService
-                .findByUser_EmailAndClient_Id(email, clientId);
-        if (userClientRoleOptional.isPresent()) {
+        Optional<UserClientRole> userEmailAndClientId = userClientRoleService.findByUserEmailAndClientId(email, clientId);
+        if(userEmailAndClientId.isPresent()){
             throw new UserAlreadyExistsException("User is already registered by email: %s in client: %s"
                     .formatted(email, clientId.toString()));
         }
-
         Client client = clientService.getById(clientId);
 
         User user = userMapper.map(signUpRequest, passwordEncoder);

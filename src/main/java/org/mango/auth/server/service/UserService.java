@@ -1,5 +1,6 @@
 package org.mango.auth.server.service;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.mango.auth.server.dto.user.UserLightDto;
 import org.mango.auth.server.entity.User;
 import org.springframework.data.domain.Page;
@@ -17,5 +18,10 @@ public interface UserService {
     User save(User user);
 
     void deleteAll();
+
+    default User getByEmail(String email) {
+        return findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("User is not found by email: %s".formatted(email)));
+    }
 
 }
