@@ -1,5 +1,6 @@
 package org.mango.auth.server.mapper;
 
+
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
