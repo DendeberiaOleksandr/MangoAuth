@@ -23,14 +23,6 @@ public abstract class ApiException extends RuntimeException {
         errorCode = null;
     }
 
-    protected ApiException(String message, String logMessage) {
-        this.message = message;
-        this.logMessage = logMessage;
-        this.data = new HashMap<>();
-        code = null;
-        errorCode = null;
-    }
-
     protected ApiException(String message, String logMessage, String code, int errorCode, Map<String, Object> data) {
         this.message = message;
         this.logMessage = logMessage;
