@@ -1,5 +1,6 @@
 package org.mango.auth.server.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
@@ -46,8 +47,8 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     @Override
     @Transactional
-    public void save(UserClientRole userClientRole) {
-        userClientRoleRepository.save(userClientRole);
+    public UserClientRole save(UserClientRole userClientRole) {
+        return userClientRoleRepository.save(userClientRole);
     }
 
     @Override

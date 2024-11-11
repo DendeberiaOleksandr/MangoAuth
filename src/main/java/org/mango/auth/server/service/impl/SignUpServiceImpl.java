@@ -2,6 +2,7 @@ package org.mango.auth.server.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.dto.SignUp.SignUpRequest;
+import org.mango.auth.server.dto.verification.SendUserVerificationEmailRequest;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
@@ -13,6 +14,7 @@ import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.SignUpService;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
+import org.mango.auth.server.service.UserVerificationService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,7 @@ public class SignUpServiceImpl implements SignUpService {
     private final ClientService clientService;
     private final UserMapper userMapper;
     private final UserClientRoleMapper userClientRoleMapper;
+    private final UserVerificationService userVerificationService;
 
 
     @Override
@@ -50,5 +53,7 @@ public class SignUpServiceImpl implements SignUpService {
 
         UserClientRole userClientRole = userClientRoleMapper.map(client, user, Role.USER);
         userClientRoleService.save(userClientRole);
+
+        userVerificationService.sendVerificationEmail(userClientRole);
     }
 }

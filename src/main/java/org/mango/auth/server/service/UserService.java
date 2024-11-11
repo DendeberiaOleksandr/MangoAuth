@@ -11,6 +11,8 @@ import java.util.UUID;
 
 public interface UserService {
 
+    User getById(UUID id);
+
     Page<UserLightDto> search(UUID clientId, Pageable pageable);
 
     Optional<User> findByEmail(String email);

@@ -9,6 +9,7 @@ import org.mango.auth.server.service.EmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,8 +20,9 @@ public class EmailServiceImpl implements EmailService {
     private String from;
     private final JavaMailSender mailSender;
 
+    @Async
     @Override
-    public boolean sendEmail(EmailProperties emailProperties) {
+    public void sendEmail(EmailProperties emailProperties) {
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage);
         try {
@@ -31,13 +33,10 @@ public class EmailServiceImpl implements EmailService {
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
             log.error("Failed to send email", e);
-            return false;
         }
-
-        return true;
     }
 
-    @Value("${spring.mail.username}")
+    @Value("${app.mail.username}")
     public void setFrom(String from) {
         this.from = from;
     }

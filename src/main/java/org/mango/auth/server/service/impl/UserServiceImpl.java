@@ -1,5 +1,6 @@
 package org.mango.auth.server.service.impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.mango.auth.server.dto.user.UserLightDto;
 import org.mango.auth.server.entity.User;
@@ -26,6 +27,13 @@ public class UserServiceImpl implements UserService {
 
     @Transactional(readOnly = true)
     @Override
+    public User getById(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User is not found by id: %s".formatted(id.toString())));
+    }
+
+    @Transactional(readOnly = true)
+    @Override
     public Page<UserLightDto> search(UUID clientId, Pageable pageable) {
         Page<UserClientRole> users = userClientRoleRepository.findAllByClient_Id(clientId, pageable);
         return users.map(userClientRole -> userMapper.map(userClientRole.getUser(), userClientRole.getRole()));
@@ -40,7 +48,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Override
     public User save(User user) {
-       return userRepository.save(user);
+        return userRepository.save(user);
     }
 
     @Override

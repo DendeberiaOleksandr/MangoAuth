@@ -59,15 +59,29 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<UserClientRole> clientRoles = new ArrayList<>();
 
-    @Column(name = "user_status", nullable = false)
+    @Column(name = "user_status")
     @Enumerated(value = EnumType.STRING)
-    private UserStatus userStatus = UserStatus.UNVERIFIED;
+    private UserStatus userStatus;
+
+    @Column(name = "email_verification_code")
+    private String emailVerificationCode;
+
+    @Column(name = "email_verification_code_last_sent_at")
+    private LocalDateTime emailVerificationCodeLastSentAt;
+
+    @Column(name = "email_verification_code_sent_times")
+    private int emailVerificationCodeSentTimes;
+
+    @Column(name = "email_verification_code_last_entered_at")
+    private LocalDateTime emailVerificationCodeLastEnteredAt;
+
+    @Column(name = "email_verification_code_entered_times")
+    private int emailVerificationCodeEnteredTimes;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        userStatus = UserStatus.UNVERIFIED;
     }
 
     @PreUpdate
