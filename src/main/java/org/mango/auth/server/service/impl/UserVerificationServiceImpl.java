@@ -96,7 +96,7 @@ public class UserVerificationServiceImpl implements UserVerificationService {
                     .user(user)
                     .client(client)
                     .emailFrom(result.emailFrom())
-                    .emailEventResult(result.isSent() ? EmailEventResult.SUCCEED : EmailEventResult.FAILURE)
+                    .emailEventResult(result.emailEventResult())
                     .emailSubject(result.subject())
                     .emailEvent(EmailEvent.ACCOUNT_VERIFICATION)
                     .sentAt(LocalDateTime.now())

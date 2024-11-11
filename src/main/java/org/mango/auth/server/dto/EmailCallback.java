@@ -1,3 +1,5 @@
 package org.mango.auth.server.dto;
 
-public record EmailCallback(String emailFrom, String subject, boolean isSent) {}
+import org.mango.auth.server.entity.EmailEventResult;
+
+public record EmailCallback(String emailFrom, String subject, EmailEventResult emailEventResult) {}

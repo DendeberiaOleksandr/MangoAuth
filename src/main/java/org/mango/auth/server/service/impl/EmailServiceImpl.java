@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mango.auth.server.dto.EmailCallback;
 import org.mango.auth.server.dto.EmailProperties;
+import org.mango.auth.server.entity.EmailEventResult;
 import org.mango.auth.server.service.EmailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -36,9 +37,9 @@ public class EmailServiceImpl implements EmailService {
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
             log.error("Failed to send email", e);
-            return CompletableFuture.completedFuture(new EmailCallback(from, emailProperties.getSubject(), false));
+            return CompletableFuture.completedFuture(new EmailCallback(from, emailProperties.getSubject(), EmailEventResult.FAILURE));
         }
-        return CompletableFuture.completedFuture(new EmailCallback(from, emailProperties.getSubject(), true));
+        return CompletableFuture.completedFuture(new EmailCallback(from, emailProperties.getSubject(), EmailEventResult.SUCCEED));
     }
 
     @Value("${app.mail.username}")
