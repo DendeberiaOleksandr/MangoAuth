@@ -1,7 +1,14 @@
 package org.mango.auth.server.integration.controller;
 
+import com.jayway.jsonpath.JsonPath;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mango.auth.server.dto.token.TokenDto;
+import org.mango.auth.server.dto.token.TokenRequest;
+import org.mango.auth.server.dto.token.TokenResponse;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
@@ -40,10 +47,14 @@ public class ITTokenController extends ITBase {
     @Autowired
     private ClientService clientService;
 
+    private String refreshToken;
+
     @BeforeEach
     public void setUp() {
         createUser("test@example.com", "password123", String.valueOf(CLIENT_ID_1));
         createUser("test@example.com", "password456", String.valueOf(TestUtil.CLIENT_ID_2));
+
+        refreshToken = createAndReturnRefreshToken("test@example.com", "password123", CLIENT_ID_1);
     }
 
     private void createUser(String email, String password, String clientId) {
@@ -66,6 +77,29 @@ public class ITTokenController extends ITBase {
                 .role(Role.USER)
                 .build();
         userClientRoleService.save(userClientRole);
+    }
+
+    private String createAndReturnRefreshToken(String email, String password, UUID clientId) {
+        String jsonRequest = String.format("""
+                {
+                    "clientId": "%s",
+                    "email": "%s",
+                    "password": "%s"
+                }
+            """, clientId, email, password);
+
+        try {
+            String response = mvc.perform(post(ApiPaths.TOKEN)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            return JsonPath.read(response, "$.refreshToken.token");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create refresh token", e);
+        }
     }
 
     @Test
@@ -140,5 +174,17 @@ public class ITTokenController extends ITBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken.token").exists())
                 .andExpect(jsonPath("$.refreshToken.token").exists());
+    }
+
+    @Test
+    void refreshAccessToken_whenValidRefreshToken_thenReturnsNewToken() throws Exception {
+        mvc.perform(post(ApiPaths.TOKEN_REFRESH)
+                        .header("Authorization", "Bearer " + refreshToken)
+                        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken.token").exists())
+                .andExpect(jsonPath("$.refreshToken.token").exists())
+                .andDo(print());
     }
 }
