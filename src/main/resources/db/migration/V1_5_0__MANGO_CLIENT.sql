@@ -1,0 +1,1 @@
+INSERT INTO client (id, name) VALUES ('3a5bef20-b6c1-4b83-8844-058e123d479d'::uuid, 'Mango');

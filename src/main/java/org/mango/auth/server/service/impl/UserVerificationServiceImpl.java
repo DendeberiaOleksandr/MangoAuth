@@ -79,9 +79,10 @@ public class UserVerificationServiceImpl implements UserVerificationService {
         User user = userClientRole.getUser();
 
         userVerificationValidator.validateBeforeSendEmail(user);
-        userService.save(user);
 
         String verificationCode = codeGenerationService.generate();
+        user.setEmailVerificationCode(verificationCode);
+        userService.save(user);
 
         String email = user.getEmail();
         String html = mailGeneratorService.generateActivationEmail(email, verificationCode, userClientRole.getClient().getName());

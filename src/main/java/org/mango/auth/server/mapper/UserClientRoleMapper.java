@@ -1,5 +1,6 @@
 package org.mango.auth.server.mapper;
 
+import org.mango.auth.server.dto.client.UserClientRoleLightDto;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
@@ -13,5 +14,10 @@ public interface UserClientRoleMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "role", source = "role")
     UserClientRole map(Client client, User user, Role role);
+
+    @Mapping(target = "clientId", source = "userClientRole.client.id")
+    @Mapping(target = "clientName", source = "userClientRole.client.name")
+    @Mapping(target = "role", source = "userClientRole.role")
+    UserClientRoleLightDto map(UserClientRole userClientRole);
 
 }
