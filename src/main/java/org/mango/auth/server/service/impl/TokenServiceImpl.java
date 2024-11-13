@@ -37,7 +37,7 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     @Transactional
-    public TokenResponse generateToken(TokenRequest request){
+    public TokenResponse generateToken(TokenRequest request, String userAgent){
         String email = request.email();
         UUID clientId = request.clientId();
 
@@ -48,13 +48,11 @@ public class TokenServiceImpl implements TokenService {
         if (UserStatus.UNVERIFIED.equals(user.getUserStatus())) {
             throw new UserIsNotVerifiedException("User: %s is not verified in client: %s".formatted(email, clientId.toString()));
         }
-
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BadCredentialsException("Invalid password");
         }
         TokenResponse tokenResponse = jwtService.generateTokens(user);
-//----------------------------------------------------------------------------------------------------------------------
-        String deviceAgent = httpServletRequest.getHeader("User-Agent");
+
         long issuedAt = tokenResponse.refreshToken().issuedAt();
         LocalDateTime dateTimeIssuedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(issuedAt), ZoneId.systemDefault());
         long expiresAt = tokenResponse.refreshToken().expiresAt();
@@ -62,12 +60,11 @@ public class TokenServiceImpl implements TokenService {
         saveOrRetrieveRefreshToken(
                 user,
                 userEmailAndClientId.getClient(),
-                deviceAgent,
+                userAgent,
                 tokenResponse.refreshToken().token(),
                 dateTimeIssuedAt,
                 dateTimeExpiresAt
         );
-//----------------------------------------------------------------------------------------------------------------------
         return tokenResponse;
     }
 

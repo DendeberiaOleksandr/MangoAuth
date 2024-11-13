@@ -1,21 +1,17 @@
 package org.mango.auth.server.integration.controller;
 
 import com.jayway.jsonpath.JsonPath;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mango.auth.server.dto.token.TokenDto;
-import org.mango.auth.server.dto.token.TokenRequest;
-import org.mango.auth.server.dto.token.TokenResponse;
 import org.mango.auth.server.entity.Client;
+import org.mango.auth.server.entity.RefreshToken;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.integration.ITBase;
 import org.mango.auth.server.integration.util.TestUtil;
+import org.mango.auth.server.repository.RefreshTokenRepository;
 import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
@@ -25,8 +21,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.util.ErrorCodes.USER_IS_NOT_VERIFIED_ERROR;
@@ -46,6 +45,8 @@ public class ITTokenController extends ITBase {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private ClientService clientService;
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
 
     private String refreshToken;
 
@@ -177,14 +178,41 @@ public class ITTokenController extends ITBase {
     }
 
     @Test
-    void refreshAccessToken_whenValidRefreshToken_thenReturnsNewToken() throws Exception {
+    void refreshAccessToken_whenValidRefreshToken_thenReturnsNewAccessToken() throws Exception {
         mvc.perform(post(ApiPaths.TOKEN_REFRESH)
-                        .header("Authorization", "Bearer " + refreshToken)
+                        .param("refreshToken", refreshToken)
                         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken.token").exists())
-                .andExpect(jsonPath("$.refreshToken.token").exists())
+                .andDo(print());
+    }
+
+    @Test
+    void refreshAccessToken_whenInvalidRefreshToken_thenReturnsError() throws Exception {
+        mvc.perform(post(ApiPaths.TOKEN_REFRESH)
+                        .param("refreshToken", "invalidToken")
+                        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andDo(print());
+    }
+
+    @Test
+    void refreshAccessToken_whenExpiredRefreshToken_thenReturnsError() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        Optional<RefreshToken> expiredTokenOpt = refreshTokenRepository.findByToken("expired_token_example");
+        if (expiredTokenOpt.isEmpty()) {
+            throw new RuntimeException("Test setup error: Expired refresh token not found in the database");
+        }
+        RefreshToken expiredToken = expiredTokenOpt.get();
+
+        assertThat(expiredToken.getExpiryAt()).isBefore(now);
+
+        mvc.perform(post(ApiPaths.TOKEN_REFRESH)
+                        .param("refreshToken", expiredToken.getToken())
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
                 .andDo(print());
     }
 }

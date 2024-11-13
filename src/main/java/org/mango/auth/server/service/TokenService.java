@@ -9,7 +9,7 @@ import org.mango.auth.server.entity.User;
 import java.time.LocalDateTime;
 
 public interface TokenService {
-    TokenResponse generateToken(TokenRequest request);
+    TokenResponse generateToken(TokenRequest request, String userAgent);
     TokenResponse refreshAccessToken(String refreshTokenValue);
     void revokeRefreshToken(User user, Client client);
 

@@ -9,10 +9,12 @@ import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.TokenService;
 import org.mango.auth.server.service.UserService;
 import org.mango.auth.server.util.ApiPaths;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -26,16 +28,19 @@ public class TokenController {
     private final ClientService clientService;
 
     @PostMapping(ApiPaths.TOKEN)
-    public ResponseEntity<TokenResponse> generateToken(@Valid @RequestBody TokenRequest request) {
-        TokenResponse response = tokenService.generateToken(request);
+    public ResponseEntity<TokenResponse> generateToken(@Valid
+            @RequestBody TokenRequest request,
+            @RequestHeader(value = HttpHeaders.USER_AGENT, required = false) String userAgent) {
+
+        TokenResponse response = tokenService.generateToken(request, userAgent);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping(ApiPaths.TOKEN_REFRESH)
-    public ResponseEntity<TokenResponse> refreshAccessToken(@RequestHeader("Authorization") String refreshToken) {
+    public ResponseEntity<TokenResponse> refreshAccessToken(
+            @RequestParam("refreshToken") String refreshToken) {
 
-        String tokenValue = refreshToken.replace("Bearer ", "");
-        TokenResponse response = tokenService.refreshAccessToken(tokenValue);
+        TokenResponse response = tokenService.refreshAccessToken(refreshToken);
         return ResponseEntity.ok(response);
     }
 
