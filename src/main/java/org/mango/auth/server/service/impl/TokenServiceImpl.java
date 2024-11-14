@@ -1,6 +1,5 @@
 package org.mango.auth.server.service.impl;
 
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.dto.token.TokenRequest;
 import org.mango.auth.server.dto.token.TokenResponse;
@@ -9,7 +8,10 @@ import org.mango.auth.server.entity.RefreshToken;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.UserStatus;
+import org.mango.auth.server.exception.ExpiredRefreshTokenException;
+import org.mango.auth.server.exception.InvalidRefreshTokenException;
 import org.mango.auth.server.exception.UserIsNotVerifiedException;
+import org.mango.auth.server.mapper.RefreshTokenMapper;
 import org.mango.auth.server.repository.RefreshTokenRepository;
 import org.mango.auth.server.service.JwtService;
 import org.mango.auth.server.service.TokenService;
@@ -19,10 +21,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.UUID;
+
+import static org.mango.auth.server.util.DateTimeUtils.convertMillisToLocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -32,8 +34,7 @@ public class TokenServiceImpl implements TokenService {
     private final PasswordEncoder passwordEncoder;
     private final UserClientRoleService userClientRoleService;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final HttpServletRequest httpServletRequest;
-
+    private final RefreshTokenMapper refreshTokenMapper;
 
     @Override
     @Transactional
@@ -42,7 +43,6 @@ public class TokenServiceImpl implements TokenService {
         UUID clientId = request.clientId();
 
         UserClientRole userEmailAndClientId = userClientRoleService.getByUserEmailAndClientId(email, clientId);
-
         User user = userEmailAndClientId.getUser();
 
         if (UserStatus.UNVERIFIED.equals(user.getUserStatus())) {
@@ -53,18 +53,15 @@ public class TokenServiceImpl implements TokenService {
         }
         TokenResponse tokenResponse = jwtService.generateTokens(user);
 
-        long issuedAt = tokenResponse.refreshToken().issuedAt();
-        LocalDateTime dateTimeIssuedAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(issuedAt), ZoneId.systemDefault());
-        long expiresAt = tokenResponse.refreshToken().expiresAt();
-        LocalDateTime dateTimeExpiresAt = LocalDateTime.ofInstant(Instant.ofEpochMilli(expiresAt), ZoneId.systemDefault());
-        saveOrRetrieveRefreshToken(
+        LocalDateTime dateTimeIssuedAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().issuedAt());
+        LocalDateTime dateTimeExpiresAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().expiresAt());
+        saveRefreshToken(
                 user,
                 userEmailAndClientId.getClient(),
                 userAgent,
                 tokenResponse.refreshToken().token(),
                 dateTimeIssuedAt,
-                dateTimeExpiresAt
-        );
+                dateTimeExpiresAt);
         return tokenResponse;
     }
 
@@ -72,11 +69,11 @@ public class TokenServiceImpl implements TokenService {
     @Transactional
     public TokenResponse refreshAccessToken(String refreshTokenValue) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
-                .orElseThrow(() -> new BadCredentialsException("Invalid refresh token"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
         if(refreshToken.getExpiryAt().isBefore(LocalDateTime.now())){
             refreshTokenRepository.delete(refreshToken);
-            throw new BadCredentialsException("Refresh token has expired");
+            throw new ExpiredRefreshTokenException("Refresh token has expired");
         }
 
         User user = refreshToken.getUser();
@@ -91,24 +88,17 @@ public class TokenServiceImpl implements TokenService {
                 .ifPresent(refreshTokenRepository::delete);
     }
 
-
-    public void saveOrRetrieveRefreshToken(User user,
-                                           Client client,
-                                           String deviceAgent,
-                                           String token,
-                                           LocalDateTime issuedAt,
-                                           LocalDateTime expiryAt) {
+    public void saveRefreshToken(User user,
+                                 Client client,
+                                 String deviceAgent,
+                                 String token,
+                                 LocalDateTime issuedAt,
+                                 LocalDateTime expiryAt) {
         refreshTokenRepository.findByUserAndClient(user, client)
                 .orElseGet(() -> {
-                    RefreshToken refreshToken = new RefreshToken();
-                    refreshToken.setUser(user);
-                    refreshToken.setClient(client);
-                    refreshToken.setDeviceAgent(deviceAgent);
-                    refreshToken.setToken(token);
-                    refreshToken.setIssuedAt(issuedAt);
-                    refreshToken.setExpiryAt(expiryAt);
-
+                    RefreshToken refreshToken = refreshTokenMapper.map(user, client, deviceAgent, token, issuedAt, expiryAt);
                     return refreshTokenRepository.save(refreshToken);
                 });
     }
+
 }

@@ -11,6 +11,7 @@ import org.mango.auth.server.service.UserService;
 import org.mango.auth.server.util.ApiPaths;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 
 @RestController
+@Validated
 @RequiredArgsConstructor
 public class TokenController {
 

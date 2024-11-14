@@ -22,12 +22,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertNotEquals;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
+import static org.mango.auth.server.util.ErrorCodes.EXPIRED_REFRESH_TOKEN_ERROR;
+import static org.mango.auth.server.util.ErrorCodes.INVALID_REFRESH_TOKEN_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.USER_IS_NOT_VERIFIED_ERROR;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -49,13 +54,16 @@ public class ITTokenController extends ITBase {
     private RefreshTokenRepository refreshTokenRepository;
 
     private String refreshToken;
+    private String accessToken;
 
     @BeforeEach
     public void setUp() {
         createUser("test@example.com", "password123", String.valueOf(CLIENT_ID_1));
         createUser("test@example.com", "password456", String.valueOf(TestUtil.CLIENT_ID_2));
 
-        refreshToken = createAndReturnRefreshToken("test@example.com", "password123", CLIENT_ID_1);
+        Map<String, String> tokens = createAndReturnTokens("test@example.com", "password123", CLIENT_ID_1);
+        refreshToken = tokens.get("refreshToken");
+        accessToken = tokens.get("accessToken");
     }
 
     private void createUser(String email, String password, String clientId) {
@@ -80,26 +88,32 @@ public class ITTokenController extends ITBase {
         userClientRoleService.save(userClientRole);
     }
 
-    private String createAndReturnRefreshToken(String email, String password, UUID clientId) {
+    private Map<String, String> createAndReturnTokens(String email, String password, UUID clientId) {
         String jsonRequest = String.format("""
-                {
-                    "clientId": "%s",
-                    "email": "%s",
-                    "password": "%s"
-                }
-            """, clientId, email, password);
+            {
+                "clientId": "%s",
+                "email": "%s",
+                "password": "%s"
+            }
+        """, clientId, email, password);
 
         try {
             String response = mvc.perform(post(ApiPaths.TOKEN)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonRequest))
-
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
 
-            return JsonPath.read(response, "$.refreshToken.token");
+            String accessToken = JsonPath.read(response, "$.accessToken.token");
+            String refreshToken = JsonPath.read(response, "$.refreshToken.token");
+
+            Map<String, String> tokens = new HashMap<>();
+            tokens.put("accessToken", accessToken);
+            tokens.put("refreshToken", refreshToken);
+
+            return tokens;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to create refresh token", e);
+            throw new RuntimeException("Failed to create tokens", e);
         }
     }
 
@@ -179,13 +193,19 @@ public class ITTokenController extends ITBase {
 
     @Test
     void refreshAccessToken_whenValidRefreshToken_thenReturnsNewAccessToken() throws Exception {
+        Thread.sleep(5000);
+        String oldAccessToken = accessToken;
         mvc.perform(post(ApiPaths.TOKEN_REFRESH)
                         .param("refreshToken", refreshToken)
                         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken.token").exists())
-                .andDo(print());
+                .andDo(print())
+                .andExpect(result -> {
+                    String newAccessToken = JsonPath.read(result.getResponse().getContentAsString(), "$.accessToken.token");
+                    assertNotEquals(oldAccessToken, newAccessToken);
+                });
     }
 
     @Test
@@ -195,6 +215,7 @@ public class ITTokenController extends ITBase {
                         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is(INVALID_REFRESH_TOKEN_ERROR)))
                 .andDo(print());
     }
 
@@ -213,6 +234,8 @@ public class ITTokenController extends ITBase {
                         .param("refreshToken", expiredToken.getToken())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code", is(EXPIRED_REFRESH_TOKEN_ERROR)))
                 .andDo(print());
     }
+
 }
