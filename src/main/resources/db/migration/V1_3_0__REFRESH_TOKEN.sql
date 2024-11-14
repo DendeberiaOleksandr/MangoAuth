@@ -1,6 +1,6 @@
 CREATE TABLE refresh_token (
     id UUID PRIMARY KEY ,
-    token VARCHAR(9999) UNIQUE NOT NULL,
+    token TEXT UNIQUE NOT NULL,
     user_id UUID NOT NULL,
     client_id UUID NOT NULL,
     issued_at TIMESTAMP NOT NULL,
