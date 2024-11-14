@@ -15,5 +15,6 @@ public interface UserClientRoleRepository extends JpaRepository<UserClientRole, 
     List<UserClientRole> findAllByUser_EmailAndRoleIn(String email, List<Role> roles);
     Page<UserClientRole> findAllByClient_Id(UUID clientId, Pageable pageable);
     Optional<UserClientRole> findByUser_EmailAndClient_Id(String email, UUID clientId);
+    Optional<UserClientRole> findByUser_EmailAndClient_Name(String email, String clientName);
     Optional<UserClientRole> findByUser(User user);
 }

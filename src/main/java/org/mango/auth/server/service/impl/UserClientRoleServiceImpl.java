@@ -20,6 +20,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserClientRoleServiceImpl implements UserClientRoleService {
 
+    public static final UUID MANGO_CLIENT_ID = UUID.fromString("3a5bef20-b6c1-4b83-8844-058e123d479d");
+
     private final UserClientRoleRepository userClientRoleRepository;
     private final UserClientRoleMapper userClientRoleMapper;
 
@@ -29,11 +31,24 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
         return userClientRoleRepository.findByUser_EmailAndClient_Id(email, clientId);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<UserClientRole> findByUserEmailAndClientName(String email, String clientName) {
+        return userClientRoleRepository.findByUser_EmailAndClient_Name(email, clientName);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public UserClientRole getByUserEmailAndClientId(String email, UUID clientId) {
         return findByUserEmailAndClientId(email, clientId)
                 .orElseThrow(() -> new NotFoundException("User not found for the specified client"));
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public UserClientRole getByUserEmailAndMangoClient(String email) {
+        return userClientRoleRepository.findByUser_EmailAndClient_Id(email, MANGO_CLIENT_ID)
+                .orElseThrow(() -> new NotFoundException("User: %s is not registered in Mango client".formatted(email)));
     }
 
     @Override

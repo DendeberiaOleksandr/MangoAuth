@@ -12,8 +12,10 @@ public interface UserClientRoleService {
     List<UserClientRoleLightDto> getUserClientsWhereIsAdminOrOwner(String email);
     UserClientRole save(UserClientRole userClientRole);
     Optional<UserClientRole> findByUserEmailAndClientId(String email, UUID clientId);
+    Optional<UserClientRole> findByUserEmailAndClientName(String email, String clientName);
     Optional<UserClientRole> findByUser(User user);
     UserClientRole getByUserEmailAndClientId(String email, UUID clientId);
+    UserClientRole getByUserEmailAndMangoClient(String email);
     UserClientRole getByUser(User user);
     void deleteAll();
 }
