@@ -16,9 +16,11 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mango.auth.server.integration.util.TestUtil.ADMIN_USER_EMAIL;
+import static org.mango.auth.server.integration.util.TestUtil.CLIENT_API_KEY_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_NAME_1;
 import static org.mango.auth.server.integration.util.TestUtil.USER_EMAIL;
@@ -64,5 +66,27 @@ public class ITClientController extends ITBase {
         assertTrue(createdClient.isPresent());
         Client client = createdClient.get().getClient();
         assertNotNull(client.getId());
+    }
+
+    @Test
+    void getById() throws Exception {
+        ResultActions result = mvc.perform(get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString())).param("email", ADMIN_USER_EMAIL));
+
+        result
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(CLIENT_ID_1.toString())))
+                .andExpect(jsonPath("$.name", is(CLIENT_NAME_1)))
+                .andExpect(jsonPath("$.apiKey", is(CLIENT_API_KEY_1)))
+                .andExpect(jsonPath("$.createdAt", notNullValue()))
+                .andDo(print());
+    }
+
+    @Test
+    void getById_whenUserDoesNotHaveAdminRoles() throws Exception {
+        ResultActions result = mvc.perform(get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString())).param("email", USER_EMAIL));
+
+        result
+                .andExpect(status().isForbidden())
+                .andDo(print());
     }
 }

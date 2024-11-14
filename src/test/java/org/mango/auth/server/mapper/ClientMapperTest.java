@@ -3,6 +3,7 @@ package org.mango.auth.server.mapper;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mango.auth.server.dto.client.ClientDto;
 import org.mango.auth.server.dto.client.CreateClientRequest;
 import org.mango.auth.server.entity.Client;
 import org.mapstruct.factory.Mappers;
@@ -27,6 +28,19 @@ class ClientMapperTest {
         assertEquals(createClientRequest.name(), client.getName());
         assertEquals(apiKey, client.getApiKey());
         assertNotNull(client.getCreatedAt());
+    }
+
+    @Test
+    void mapToDetails() {
+        Client client = Instancio.create(Client.class);
+
+        ClientDto dto = mapper.map(client);
+
+        assertNotNull(dto);
+        assertEquals(client.getId(), dto.getId());
+        assertEquals(client.getName(), dto.getName());
+        assertEquals(client.getApiKey(), dto.getApiKey());
+        assertEquals(client.getCreatedAt(), dto.getCreatedAt());
     }
 
 }
