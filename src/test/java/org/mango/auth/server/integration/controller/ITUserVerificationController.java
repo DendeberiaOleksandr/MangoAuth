@@ -1,11 +1,16 @@
 package org.mango.auth.server.integration.controller;
 
+import org.instancio.Instancio;
 import org.junit.jupiter.api.Test;
+import org.mango.auth.server.dto.EmailCallback;
 import org.mango.auth.server.dto.verification.SendUserVerificationEmailRequest;
 import org.mango.auth.server.dto.verification.UserVerificationRequest;
+import org.mango.auth.server.entity.EmailAudit;
 import org.mango.auth.server.entity.User;
+import org.mango.auth.server.enums.EmailEvent;
 import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.integration.ITBase;
+import org.mango.auth.server.repository.EmailAuditRepository;
 import org.mango.auth.server.service.EmailService;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
@@ -15,11 +20,14 @@ import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.integration.util.TestUtil.USER_EMAIL;
 import static org.mango.auth.server.integration.util.TestUtil.USER_ID;
@@ -27,6 +35,8 @@ import static org.mango.auth.server.util.ApiPaths.USER_API;
 import static org.mango.auth.server.util.ErrorCodes.EMAIL_VERIFICATION_CODE_ENTER_LIMIT_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.INVALID_EMAIL_VERIFICATION_CODE_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.VERIFICATION_EMAIL_SEND_LIMIT_ERROR;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -41,6 +51,8 @@ public class ITUserVerificationController extends ITBase {
     UserClientRoleService userClientRoleService;
     @MockBean
     EmailService emailService;
+    @Autowired
+    EmailAuditRepository emailAuditRepository;
 
     @Test
     void verify_whenUserExceedsCodeEnteringAttemptsAndResetTimeIsNotGone() throws Exception {
@@ -154,6 +166,7 @@ public class ITUserVerificationController extends ITBase {
                 ).andDo(print())
                 .andExpect(status().is(429))
                 .andExpect(jsonPath("$.code", is(VERIFICATION_EMAIL_SEND_LIMIT_ERROR)));
+        assertEmailAuditNotSaved();
     }
 
     @Test
@@ -167,6 +180,10 @@ public class ITUserVerificationController extends ITBase {
                 USER_EMAIL, CLIENT_ID_1
         ));
 
+        EmailCallback emailCallback = Instancio.create(EmailCallback.class);
+        when(emailService.sendEmail(any()))
+                .thenReturn(CompletableFuture.completedFuture(emailCallback));
+
         mvc.perform(
                         post(USER_API + "/send-verification-email")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -175,6 +192,7 @@ public class ITUserVerificationController extends ITBase {
                 .andExpect(status().isOk());
 
         assertEquals(1, user.getEmailVerificationCodeSentTimes());
+        assertEmailAuditSaved(emailCallback);
     }
 
     @Test
@@ -187,6 +205,10 @@ public class ITUserVerificationController extends ITBase {
                 USER_EMAIL, CLIENT_ID_1
         ));
 
+        EmailCallback emailCallback = Instancio.create(EmailCallback.class);
+        when(emailService.sendEmail(any()))
+                .thenReturn(CompletableFuture.completedFuture(emailCallback));
+
         mvc.perform(
                         post(USER_API + "/send-verification-email")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -195,6 +217,27 @@ public class ITUserVerificationController extends ITBase {
                 .andExpect(status().isOk());
 
         assertEquals(2, user.getEmailVerificationCodeSentTimes());
+        assertEmailAuditSaved(emailCallback);
+    }
+
+    private void assertEmailAuditNotSaved() {
+        List<EmailAudit> emailAudits = emailAuditRepository.findAll();
+        assertTrue(emailAudits.isEmpty());
+    }
+
+    private void assertEmailAuditSaved(EmailCallback emailCallback) {
+        List<EmailAudit> emailAudits = emailAuditRepository.findAll();
+        assertEquals(1, emailAudits.size());
+        EmailAudit emailAudit = emailAudits.get(0);
+        assertNotNull(emailAudit);
+        assertEquals(emailCallback.emailFrom(), emailAudit.getEmailFrom());
+        assertEquals(emailCallback.subject(), emailAudit.getEmailSubject());
+        assertEquals(EmailEvent.ACCOUNT_VERIFICATION, emailAudit.getEmailEvent());
+        assertEquals(emailCallback.emailEventResult(), emailAudit.getEmailEventResult());
+        assertNotNull(emailAudit.getUser());
+        assertNotNull(emailAudit.getClient());
+        assertNotNull(emailAudit.getId());
+        assertNotNull(emailAudit.getSentAt());
     }
 
 }
