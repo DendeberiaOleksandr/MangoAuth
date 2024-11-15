@@ -30,7 +30,7 @@ public class JwtServiceImpl implements JwtService {
     @Value("${app.token.secret}")
     private String secret;
 
-    @Value("${app.token.accessTokenExpiration:30000}")
+    @Value("${app.token.accessTokenExpiration:3600000}")
     private long accessTokenExpiration;
 
     @Value("${app.token.refreshTokenExpiration:7884000000}")

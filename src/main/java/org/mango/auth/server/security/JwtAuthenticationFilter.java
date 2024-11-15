@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.mango.auth.server.entity.UserClientRole;
+import org.mango.auth.server.repository.UserClientRoleRepository;
 import org.mango.auth.server.service.JwtService;
 import org.mango.auth.server.service.impl.UserDetailsServiceImpl;
 import org.springframework.http.HttpHeaders;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -22,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsServiceImpl userDetailsService;
+    private final UserClientRoleRepository userClientRoleRepository;
 
     private static final String BEARER_PREFIX = "Bearer ";
 
