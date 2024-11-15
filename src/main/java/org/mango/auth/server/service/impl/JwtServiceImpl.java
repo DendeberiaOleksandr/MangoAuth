@@ -1,9 +1,12 @@
 package org.mango.auth.server.service.impl;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.mango.auth.server.dto.token.TokenDto;
 import org.mango.auth.server.dto.token.TokenResponse;
 import org.mango.auth.server.entity.User;
@@ -14,10 +17,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
-import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
@@ -35,6 +39,29 @@ public class JwtServiceImpl implements JwtService {
     private String issuer;
 
     private final UserClientRoleService userClientRoleService;
+
+    @Override
+    public boolean validateToken(String token) {
+        try {
+            Jws<Claims> jws = getJwsFromToken(token);
+            return jws != null;
+        } catch (Exception e) {
+            log.debug("Failed to parse JWT", e);
+            return false;
+        }
+    }
+
+    @Override
+    public String getEmailFromToken(String token) {
+        Jws<Claims> jws = getJwsFromToken(token);
+        return jws.getPayload().getSubject();
+    }
+
+    @Override
+    public String getClientIdFromToken(String token) {
+        Jws<Claims> jws = getJwsFromToken(token);
+        return jws.getPayload().getId();
+    }
 
     @Override
     @Transactional
@@ -68,6 +95,14 @@ public class JwtServiceImpl implements JwtService {
                 .expiration(expiration)
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    private Jws<Claims> getJwsFromToken(String token) {
+        return Jwts
+                .parser()
+                .verifyWith((SecretKey) getSigningKey())
+                .build()
+                .parseSignedClaims(token);
     }
 
     private Key getSigningKey() {
