@@ -41,8 +41,8 @@ public class ITClientController extends ITBase {
     void getUserClientsWhereIsAdminOrOwner() throws Exception {
         mvc.perform(get(CLIENT_API).param("email", ADMIN_USER_EMAIL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].clientId", is(CLIENT_ID_1.toString())))
-                .andExpect(jsonPath("$[0].clientName", is(CLIENT_NAME_1)))
+                .andExpect(jsonPath("$[0].id", is(CLIENT_ID_1.toString())))
+                .andExpect(jsonPath("$[0].name", is(CLIENT_NAME_1)))
                 .andExpect(jsonPath("$[0].role", is(Role.ADMIN.name())))
                 .andDo(print());
     }

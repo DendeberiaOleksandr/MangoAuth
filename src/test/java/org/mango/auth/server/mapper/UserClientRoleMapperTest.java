@@ -23,8 +23,8 @@ class UserClientRoleMapperTest {
         UserClientRoleLightDto result = mapper.map(userClientRole);
 
         assertNotNull(result);
-        assertEquals(userClientRole.getClient().getId(), result.getClientId());
-        assertEquals(userClientRole.getClient().getName(), result.getClientName());
+        assertEquals(userClientRole.getClient().getId(), result.getId());
+        assertEquals(userClientRole.getClient().getName(), result.getName());
         assertEquals(userClientRole.getRole(), result.getRole());
     }
 
