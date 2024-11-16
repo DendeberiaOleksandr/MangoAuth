@@ -14,8 +14,8 @@ import java.util.UUID;
 @NoArgsConstructor
 public class UserClientRoleLightDto {
 
-    private UUID clientId;
-    private String clientName;
+    private UUID id;
+    private String name;
     private Role role;
 
 }
