@@ -13,6 +13,7 @@ import java.util.UUID;
 
 public interface UserClientRoleRepository extends JpaRepository<UserClientRole, Long> {
     List<UserClientRole> findAllByUser_EmailAndRoleIn(String email, List<Role> roles);
+    List<UserClientRole> findAllByUser_EmailAndClient_IdAndRoleIn(String email, UUID clientId, List<Role> roles);
     Page<UserClientRole> findAllByClient_Id(UUID clientId, Pageable pageable);
     Optional<UserClientRole> findByUser_EmailAndClient_Id(String email, UUID clientId);
     Optional<UserClientRole> findByUser_EmailAndClient_Name(String email, String clientName);

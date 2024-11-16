@@ -1,14 +1,17 @@
 package org.mango.auth.server.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.mango.auth.server.dto.client.ClientDto;
 import org.mango.auth.server.dto.client.UserClientRoleLightDto;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.exception.NotFoundException;
+import org.mango.auth.server.mapper.ClientMapper;
 import org.mango.auth.server.mapper.UserClientRoleMapper;
 import org.mango.auth.server.repository.UserClientRoleRepository;
 import org.mango.auth.server.service.UserClientRoleService;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     private final UserClientRoleRepository userClientRoleRepository;
     private final UserClientRoleMapper userClientRoleMapper;
+    private final ClientMapper clientMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -55,6 +59,19 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
     @Transactional(readOnly = true)
     public Optional<UserClientRole> findByUser(User user) {
         return userClientRoleRepository.findByUser(user);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public ClientDto getById(UUID id, String userEmail) {
+        List<UserClientRole> userClientRoles =
+                userClientRoleRepository.findAllByUser_EmailAndClient_IdAndRoleIn(userEmail, id, List.of(Role.OWNER, Role.ADMIN));
+
+        if (userClientRoles.isEmpty()) {
+            throw new AccessDeniedException("User does not have access to read client: %s".formatted(id.toString()));
+        }
+
+        return clientMapper.map(userClientRoles.get(0).getClient());
     }
 
     @Override
