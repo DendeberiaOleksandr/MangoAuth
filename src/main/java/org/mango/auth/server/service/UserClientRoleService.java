@@ -1,5 +1,6 @@
 package org.mango.auth.server.service;
 
+import org.mango.auth.server.dto.client.ClientDto;
 import org.mango.auth.server.dto.client.UserClientRoleLightDto;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
@@ -14,6 +15,7 @@ public interface UserClientRoleService {
     Optional<UserClientRole> findByUserEmailAndClientId(String email, UUID clientId);
     Optional<UserClientRole> findByUserEmailAndClientName(String email, String clientName);
     Optional<UserClientRole> findByUser(User user);
+    ClientDto getById(UUID id, String userEmail);
     UserClientRole getByUserEmailAndClientId(String email, UUID clientId);
     UserClientRole getByUserEmailAndMangoClient(String email);
     UserClientRole getByUser(User user);
