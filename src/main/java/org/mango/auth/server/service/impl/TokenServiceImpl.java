@@ -10,12 +10,15 @@ import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.exception.ExpiredRefreshTokenException;
 import org.mango.auth.server.exception.InvalidRefreshTokenException;
+import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.exception.UserIsNotVerifiedException;
 import org.mango.auth.server.mapper.RefreshTokenMapper;
 import org.mango.auth.server.repository.RefreshTokenRepository;
+import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.JwtService;
 import org.mango.auth.server.service.TokenService;
 import org.mango.auth.server.service.UserClientRoleService;
+import org.mango.auth.server.service.UserService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,8 @@ public class TokenServiceImpl implements TokenService {
     private final UserClientRoleService userClientRoleService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RefreshTokenMapper refreshTokenMapper;
+    private final UserService userService;
+    private final ClientService clientService;
 
     @Override
     @Transactional
@@ -83,9 +88,24 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     @Transactional
-    public void revokeRefreshToken(User user, Client client) {
+    public void revokeRefreshToken(String refreshTokenValue) {
+        String email = jwtService.getEmailFromToken(refreshTokenValue);
+        String clientId = jwtService.getClientIdFromToken(refreshTokenValue);
+
+        if (email == null || clientId == null) {
+            throw new InvalidRefreshTokenException("Email or clientId is missing in the refresh token");
+        }
+
+        User user = userService.getByEmail(email);
+        Client client = clientService.getById(UUID.fromString(clientId));
+
         refreshTokenRepository.findByUserAndClient(user, client)
-                .ifPresent(refreshTokenRepository::delete);
+                .ifPresentOrElse(
+                        refreshTokenRepository::delete,
+                        () -> {
+                            throw new NotFoundException("No refresh token found for the given user and client");
+                        }
+                );
     }
 
     public void saveRefreshToken(User user,

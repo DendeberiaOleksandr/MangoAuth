@@ -11,6 +11,6 @@ import java.time.LocalDateTime;
 public interface TokenService {
     TokenResponse generateToken(TokenRequest request, String userAgent);
     TokenResponse refreshAccessToken(String refreshTokenValue);
-    void revokeRefreshToken(User user, Client client);
+    void revokeRefreshToken(String refreshTokenValue);
 
 }

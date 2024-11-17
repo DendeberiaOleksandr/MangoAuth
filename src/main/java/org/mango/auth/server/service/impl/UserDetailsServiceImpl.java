@@ -2,9 +2,7 @@ package org.mango.auth.server.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.entity.UserClientRole;
-import org.mango.auth.server.repository.ClientRepository;
 import org.mango.auth.server.repository.UserClientRoleRepository;
-import org.mango.auth.server.repository.UserRepository;
 import org.mango.auth.server.security.UserDetailsImpl;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,8 +15,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final UserRepository userRepository;
-    private final ClientRepository clientRepository;
     private final UserClientRoleRepository userClientRoleRepository;
 
     @Override

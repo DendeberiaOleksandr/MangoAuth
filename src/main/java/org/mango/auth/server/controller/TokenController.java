@@ -33,7 +33,6 @@ public class TokenController {
     public ResponseEntity<TokenResponse> generateToken(@Valid
             @RequestBody TokenRequest request,
             @RequestHeader(value = HttpHeaders.USER_AGENT, required = false) String userAgent) {
-
         TokenResponse response = tokenService.generateToken(request, userAgent);
         return ResponseEntity.ok(response);
     }
@@ -41,22 +40,14 @@ public class TokenController {
     @PostMapping(ApiPaths.TOKEN_REFRESH)
     public ResponseEntity<TokenResponse> refreshAccessToken(
             @RequestParam("refreshToken") String refreshToken) {
-
         TokenResponse response = tokenService.refreshAccessToken(refreshToken);
         return ResponseEntity.ok(response);
     }
 
-//    @PostMapping(ApiPaths.TOKEN_SIGN_OUT)
-//    public ResponseEntity<Void> signOut(@AuthenticationPrincipal Jwt principal) {
-//
-//        UUID userId = UUID.fromString(principal.getClaim("userId"));
-//        UUID clientId = UUID.fromString(principal.getClaim("clientId"));
-//
-//
-//        User user = userService.findById(userId);
-//        Client client = clientService.findById(clientId);
-//
-//        tokenService.revokeRefreshToken(user, client);
-//        return ResponseEntity.noContent().build();
-//    }
+    @PostMapping(ApiPaths.TOKEN_SIGN_OUT)
+    public ResponseEntity<Void> signOut(
+            @RequestParam("refreshToken") String refreshToken ) {
+        tokenService.revokeRefreshToken(refreshToken);
+        return ResponseEntity.noContent().build();
+    }
 }

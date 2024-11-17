@@ -48,4 +48,10 @@ public class ClientServiceImpl implements ClientService {
 
         return userClientRoleService.save(usersClient).getClient();
     }
+
+    @Transactional
+    @Override
+    public Client save(Client client) {
+        return clientRepository.save(client);
+    }
 }
