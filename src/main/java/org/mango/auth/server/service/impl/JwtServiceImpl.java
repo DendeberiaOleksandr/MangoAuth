@@ -53,18 +53,9 @@ public class JwtServiceImpl implements JwtService {
     }
 
     @Override
-    public String getEmailFromToken(String token) {
-        Jws<Claims> jws = getJwsFromToken(token);
-        return jws.getPayload().getSubject();
+    public Claims getClaimsFromToken(String token) {
+        return getJwsFromToken(token).getPayload();
     }
-
-    @Override
-    public String getClientIdFromToken(String token) {
-        Jws<Claims> jws = getJwsFromToken(token);
-        return jws.getPayload().get("CLIENT_ID", String.class);
-    }
-
-
 
     @Override
     @Transactional

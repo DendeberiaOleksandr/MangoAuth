@@ -1,5 +1,6 @@
 package org.mango.auth.server.security;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,22 +40,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
-        String email = jwtService.getEmailFromToken(token);
-        String clientId = jwtService.getClientIdFromToken(token);
 
-        if (email != null && clientId != null) {
-            UserDetailsImpl userDetails = (UserDetailsImpl) userDetailsService.loadUserByUsername(email + "--" + clientId);
+        try {
+            if (!jwtService.validateToken(token)) {
+                throw new JwtException("Invalid JWT token");
+            }
 
-            if (jwtService.validateToken(token)) {
+            String email = jwtService.getClaimsFromToken(token).getSubject();
+            String clientId = jwtService.getClaimsFromToken(token).get("CLIENT_ID", String.class);
+
+            if (email != null && clientId != null) {
+                UserDetailsImpl userDetails = (UserDetailsImpl) userDetailsService.loadUserByUsername(email + "--" + clientId);
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+
             }
+        } catch (JwtException e) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Invalid or expired token: " + e.getMessage());
+            return;
+        } catch (Exception e) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getWriter().write("An unexpected error occurred: " + e.getMessage());
+            return;
         }
 
         filterChain.doFilter(request, response);
     }
-
 
 }

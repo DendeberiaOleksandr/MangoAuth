@@ -243,13 +243,23 @@ public class ITTokenController extends ITBase {
     }
 
     @Test
-    void test() throws Exception {
+    void testSignOut_SuccessfulRevocation()throws Exception {
         mvc.perform(
                         delete(ApiPaths.TOKEN_SIGN_OUT)
                                 .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + refreshToken)
-                                .param("refreshToken", refreshToken )
+
                 )
                 .andExpect(status().isNoContent())
+                .andDo(print());
+    }
+
+    @Test
+    void testSignOut_InvalidToken() throws Exception {
+        mvc.perform(
+                        delete(ApiPaths.TOKEN_SIGN_OUT)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + "invalidToken")
+                )
+                .andExpect(status().isUnauthorized())
                 .andDo(print());
     }
 }
