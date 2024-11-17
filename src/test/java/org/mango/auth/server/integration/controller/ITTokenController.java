@@ -17,6 +17,7 @@ import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
 import org.mango.auth.server.util.ApiPaths;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +32,14 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertNotEquals;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
+import static org.mango.auth.server.integration.util.TestUtil.CLIENT_NAME_1;
+import static org.mango.auth.server.util.ApiPaths.CLIENT_API;
+import static org.mango.auth.server.util.ApiPaths.TOKEN_SIGN_OUT;
 import static org.mango.auth.server.util.ErrorCodes.EXPIRED_REFRESH_TOKEN_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.INVALID_REFRESH_TOKEN_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.USER_IS_NOT_VERIFIED_ERROR;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -52,6 +58,8 @@ public class ITTokenController extends ITBase {
     private ClientService clientService;
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+
+    private static final String BEARER_PREFIX = "Bearer ";
 
     private String refreshToken;
     private String accessToken;
@@ -238,4 +246,14 @@ public class ITTokenController extends ITBase {
                 .andDo(print());
     }
 
+    @Test
+    void test() throws Exception {
+        mvc.perform(
+                        delete(ApiPaths.TOKEN_SIGN_OUT)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + refreshToken)
+                                .param("refreshToken", refreshToken )
+                )
+                .andExpect(status().isNoContent())
+                .andDo(print());
+    }
 }

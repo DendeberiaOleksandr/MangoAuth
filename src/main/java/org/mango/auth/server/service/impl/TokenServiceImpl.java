@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mango.auth.server.util.DateTimeUtils.convertMillisToLocalDateTime;
@@ -88,24 +89,16 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     @Transactional
-    public void revokeRefreshToken(String refreshTokenValue) {
-        String email = jwtService.getEmailFromToken(refreshTokenValue);
-        String clientId = jwtService.getClientIdFromToken(refreshTokenValue);
+    public void revokeRefreshToken(String email, UUID clientId) {
 
-        if (email == null || clientId == null) {
-            throw new InvalidRefreshTokenException("Email or clientId is missing in the refresh token");
-        }
+        Optional<RefreshToken> optionalRefreshToken = refreshTokenRepository.findByUser_EmailAndClient_Id(email, clientId);
 
-        User user = userService.getByEmail(email);
-        Client client = clientService.getById(UUID.fromString(clientId));
-
-        refreshTokenRepository.findByUserAndClient(user, client)
-                .ifPresentOrElse(
-                        refreshTokenRepository::delete,
-                        () -> {
-                            throw new NotFoundException("No refresh token found for the given user and client");
-                        }
-                );
+        optionalRefreshToken.ifPresentOrElse(
+                refreshTokenRepository::delete,
+                () -> {
+                    throw new NotFoundException("No refresh token found for the given user and client");
+                }
+        );
     }
 
     public void saveRefreshToken(User user,

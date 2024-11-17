@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID> {
     Optional<RefreshToken> findByToken(String token);
     Optional<RefreshToken> findByUserAndClient(User user, Client client);
+    Optional<RefreshToken> findByUser_EmailAndClient_Id(String email, UUID clientId);
 }
