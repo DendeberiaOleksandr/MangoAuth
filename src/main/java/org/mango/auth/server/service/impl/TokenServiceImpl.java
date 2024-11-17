@@ -57,7 +57,7 @@ public class TokenServiceImpl implements TokenService {
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BadCredentialsException("Invalid password");
         }
-        TokenResponse tokenResponse = jwtService.generateTokens(user);
+        TokenResponse tokenResponse = jwtService.generateTokens(user, userEmailAndClientId.getClient());
 
         LocalDateTime dateTimeIssuedAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().issuedAt());
         LocalDateTime dateTimeExpiresAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().expiresAt());
@@ -83,8 +83,9 @@ public class TokenServiceImpl implements TokenService {
         }
 
         User user = refreshToken.getUser();
+        Client client = refreshToken.getClient();
 
-        return jwtService.generateTokens(user);
+        return jwtService.generateTokens(user, client);
     }
 
     @Override

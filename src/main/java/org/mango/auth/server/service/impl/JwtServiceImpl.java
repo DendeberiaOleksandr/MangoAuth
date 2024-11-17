@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mango.auth.server.dto.token.TokenDto;
 import org.mango.auth.server.dto.token.TokenResponse;
+import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.service.JwtService;
@@ -67,9 +68,9 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     @Transactional
-    public TokenResponse generateTokens(User user) {
+    public TokenResponse generateTokens(User user, Client client) {
         Date now = new Date();
-        UserClientRole userClientRole = userClientRoleService.getByUser(user);
+        UserClientRole userClientRole = userClientRoleService.getByUserEmailAndClientId(user.getEmail(), client.getId());
 
         Date accessTokenExpDate = new Date(now.getTime() + this.accessTokenExpiration);
         TokenDto accessToken = new TokenDto(
