@@ -1,6 +1,7 @@
 package org.mango.auth.server.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.mango.auth.server.dto.token.RefreshTokenRequest;
 import org.mango.auth.server.dto.token.TokenRequest;
 import org.mango.auth.server.dto.token.TokenResponse;
 import org.mango.auth.server.entity.Client;
@@ -73,8 +74,8 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     @Transactional
-    public TokenResponse refreshAccessToken(String refreshTokenValue) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
+    public TokenResponse refreshAccessToken(RefreshTokenRequest request) {
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.refreshToken())
                 .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
         if(refreshToken.getExpiryAt().isBefore(LocalDateTime.now())){

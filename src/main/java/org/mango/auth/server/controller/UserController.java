@@ -28,10 +28,12 @@ public class UserController {
 
     private final UserService userService;
 
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'OWNER')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
-    public ResponseEntity<Page<UserLightDto>> searchUsers(@RequestParam("clientId") UUID clientId, Pageable pageable) {
-        return ResponseEntity.ok(userService.search(clientId, pageable));
+    public ResponseEntity<Page<UserLightDto>> searchUsers(Authentication authentication,
+                                                          @RequestParam("clientId") UUID clientId, Pageable pageable) {
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        return ResponseEntity.ok(userService.search(clientId, userDetails, pageable));
     }
 
 }

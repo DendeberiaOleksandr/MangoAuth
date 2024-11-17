@@ -30,7 +30,7 @@ public class JwtServiceImpl implements JwtService {
     @Value("${app.token.secret}")
     private String secret;
 
-    @Value("${app.token.accessTokenExpiration:3600000}")
+    @Value("${app.token.accessTokenExpiration:30000}")
     private long accessTokenExpiration;
 
     @Value("${app.token.refreshTokenExpiration:7884000000}")
@@ -63,8 +63,6 @@ public class JwtServiceImpl implements JwtService {
         Jws<Claims> jws = getJwsFromToken(token);
         return jws.getPayload().get("CLIENT_ID", String.class);
     }
-
-
 
     @Override
     @Transactional

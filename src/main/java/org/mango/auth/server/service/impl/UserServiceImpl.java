@@ -4,16 +4,21 @@ import lombok.AllArgsConstructor;
 import org.mango.auth.server.dto.user.UserLightDto;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
+import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.mapper.UserMapper;
 import org.mango.auth.server.repository.UserClientRoleRepository;
 import org.mango.auth.server.repository.UserRepository;
+import org.mango.auth.server.security.UserDetailsImpl;
+import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,7 +27,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final UserClientRoleRepository userClientRoleRepository;
+    private final UserClientRoleService userClientRoleService;
     private final UserMapper userMapper;
 
     @Transactional(readOnly = true)
@@ -34,9 +39,19 @@ public class UserServiceImpl implements UserService {
 
     @Transactional(readOnly = true)
     @Override
-    public Page<UserLightDto> search(UUID clientId, Pageable pageable) {
-        Page<UserClientRole> users = userClientRoleRepository.findAllByClient_Id(clientId, pageable);
+    public Page<UserLightDto> search(UUID clientId, UserDetailsImpl userDetails,  Pageable pageable) {
+        validateAccessForClient(userDetails, clientId);
+
+        Page<UserClientRole> users = userClientRoleService.findAllByClientId(clientId, pageable);
         return users.map(userClientRole -> userMapper.map(userClientRole.getUser(), userClientRole.getRole()));
+    }
+
+    private void validateAccessForClient(UserDetailsImpl userDetails, UUID clientId) {
+        List<UserClientRole> userClientRoles = userClientRoleService.findAllByUserEmailAndClientIdAndRoleIn(
+                userDetails.getEmail(), clientId, List.of(Role.ADMIN, Role.OWNER));
+        if (userClientRoles.isEmpty()) {
+            throw new NotFoundException("Client %s does not exist".formatted(clientId.toString()));
+        }
     }
 
     @Transactional(readOnly = true)

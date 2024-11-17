@@ -3,6 +3,7 @@ package org.mango.auth.server.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.mango.auth.server.dto.token.RefreshTokenRequest;
 import org.mango.auth.server.dto.token.TokenRequest;
 import org.mango.auth.server.dto.token.TokenResponse;
 import org.mango.auth.server.security.UserDetailsImpl;
@@ -43,9 +44,8 @@ public class TokenController {
     }
 
     @PostMapping(ApiPaths.TOKEN_REFRESH)
-    public ResponseEntity<TokenResponse> refreshAccessToken(
-            @RequestParam("refreshToken") String refreshToken) {
-        TokenResponse response = tokenService.refreshAccessToken(refreshToken);
+    public ResponseEntity<TokenResponse> refreshAccessToken(@RequestBody @Valid RefreshTokenRequest request) {
+        TokenResponse response = tokenService.refreshAccessToken(request);
         return ResponseEntity.ok(response);
     }
 

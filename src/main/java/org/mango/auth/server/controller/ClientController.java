@@ -42,10 +42,12 @@ public class ClientController {
         return ResponseEntity.ok(userClientRoleService.getUserClientsWhereIsAdminOrOwner(email));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
-    public ResponseEntity<ClientDto> getUserClient(@PathVariable("id") UUID id,
-            @RequestParam("email") String email) {
-        return ResponseEntity.ok(userClientRoleService.getById(id, email));
+    public ResponseEntity<ClientDto> getUserClient(Authentication authentication,
+                                                   @PathVariable("id") UUID id) {
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        return ResponseEntity.ok(userClientRoleService.getById(id, userDetails));
     }
 
     @PostMapping

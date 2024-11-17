@@ -75,13 +75,8 @@ public class ITClientController extends ITBase {
 
     }
 
-    @Autowired
-    UserClientRoleService userClientRoleService;
-
     @Test
     void getUserClientsWhereIsAdminOrOwner() throws Exception {
-        mvc.perform(get(CLIENT_API).param("email", ADMIN_USER_EMAIL))
-
         mvc.perform(
                 get(CLIENT_API)
                         .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForAdmin)

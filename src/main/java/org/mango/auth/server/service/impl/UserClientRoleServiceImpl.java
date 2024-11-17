@@ -10,7 +10,10 @@ import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.mapper.ClientMapper;
 import org.mango.auth.server.mapper.UserClientRoleMapper;
 import org.mango.auth.server.repository.UserClientRoleRepository;
+import org.mango.auth.server.security.UserDetailsImpl;
 import org.mango.auth.server.service.UserClientRoleService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +58,12 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
                 .orElseThrow(() -> new NotFoundException("User: %s is not registered in Mango client".formatted(email)));
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public List<UserClientRole> findAllByUserEmailAndClientIdAndRoleIn(String email, UUID clientId, List<Role> roles) {
+        return userClientRoleRepository.findAllByUser_EmailAndClient_IdAndRoleIn(email, clientId, roles);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Optional<UserClientRole> findByUser(User user) {
@@ -63,9 +72,9 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     @Transactional(readOnly = true)
     @Override
-    public ClientDto getById(UUID id, String userEmail) {
+    public ClientDto getById(UUID id, UserDetailsImpl userDetails) {
         List<UserClientRole> userClientRoles =
-                userClientRoleRepository.findAllByUser_EmailAndClient_IdAndRoleIn(userEmail, id, List.of(Role.OWNER, Role.ADMIN));
+                userClientRoleRepository.findAllByUser_EmailAndClient_IdAndRoleIn(userDetails.getEmail(), id, List.of(Role.OWNER, Role.ADMIN));
 
         if (userClientRoles.isEmpty()) {
             throw new AccessDeniedException("User does not have access to read client: %s".formatted(id.toString()));
@@ -79,6 +88,12 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
     public UserClientRole getByUser(User user) {
         return findByUser(user)
                 .orElseThrow(() -> new NotFoundException("User client role not found"));
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<UserClientRole> findAllByClientId(UUID clientId, Pageable pageable) {
+        return userClientRoleRepository.findAllByClient_Id(clientId, pageable);
     }
 
     @Transactional(readOnly = true)

@@ -3,6 +3,7 @@ package org.mango.auth.server.service;
 import jakarta.persistence.EntityNotFoundException;
 import org.mango.auth.server.dto.user.UserLightDto;
 import org.mango.auth.server.entity.User;
+import org.mango.auth.server.security.UserDetailsImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -13,7 +14,7 @@ public interface UserService {
 
     User getById(UUID id);
 
-    Page<UserLightDto> search(UUID clientId, Pageable pageable);
+    Page<UserLightDto> search(UUID clientId, UserDetailsImpl userDetails, Pageable pageable);
 
     Optional<User> findByEmail(String email);
 
