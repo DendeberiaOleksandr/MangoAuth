@@ -15,11 +15,9 @@ import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.exception.UserIsNotVerifiedException;
 import org.mango.auth.server.mapper.RefreshTokenMapper;
 import org.mango.auth.server.repository.RefreshTokenRepository;
-import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.JwtService;
 import org.mango.auth.server.service.TokenService;
 import org.mango.auth.server.service.UserClientRoleService;
-import org.mango.auth.server.service.UserService;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,8 +38,6 @@ public class TokenServiceImpl implements TokenService {
     private final UserClientRoleService userClientRoleService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RefreshTokenMapper refreshTokenMapper;
-    private final UserService userService;
-    private final ClientService clientService;
 
     @Override
     @Transactional
@@ -58,6 +54,9 @@ public class TokenServiceImpl implements TokenService {
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BadCredentialsException("Invalid password");
         }
+        //------------------------------------------------------------
+        // смотреть в бд если там уже есть токен то используем его если просрочен то рефрешаем
+        //------------------------------------------------------------
         TokenResponse tokenResponse = jwtService.generateTokens(user, userEmailAndClientId.getClient());
 
         LocalDateTime dateTimeIssuedAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().issuedAt());
@@ -86,7 +85,7 @@ public class TokenServiceImpl implements TokenService {
         User user = refreshToken.getUser();
         Client client = refreshToken.getClient();
 
-        return jwtService.generateTokens(user, client);
+        return jwtService.generateTokens(user, client, refreshToken);
     }
 
     @Override

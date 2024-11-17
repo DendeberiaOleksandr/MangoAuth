@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mango.auth.server.dto.token.TokenDto;
 import org.mango.auth.server.dto.token.TokenResponse;
 import org.mango.auth.server.entity.Client;
+import org.mango.auth.server.entity.RefreshToken;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.service.JwtService;
@@ -60,6 +61,12 @@ public class JwtServiceImpl implements JwtService {
     @Override
     @Transactional
     public TokenResponse generateTokens(User user, Client client) {
+        return generateTokens(user, client, null);
+    }
+
+    @Override
+    @Transactional
+    public TokenResponse generateTokens(User user, Client client, RefreshToken refreshToken) {
         Date now = new Date();
         UserClientRole userClientRole = userClientRoleService.getByUserEmailAndClientId(user.getEmail(), client.getId());
 
@@ -69,14 +76,23 @@ public class JwtServiceImpl implements JwtService {
                 accessTokenExpDate.getTime(),
                 now.getTime());
 
+        TokenDto refreshTokenDto = null;
 
-        Date refreshTokenExpDate = new Date(now.getTime() + this.refreshTokenExpiration);
-        TokenDto refreshToken = new TokenDto(
-                generateToken(user, now, refreshTokenExpDate, userClientRole),
-                refreshTokenExpDate.getTime(),
-                now.getTime());
+        if (refreshToken == null){
+            Date refreshTokenExpDate = new Date(now.getTime() + this.refreshTokenExpiration);
+             refreshTokenDto = new TokenDto(
+                    generateToken(user, now, refreshTokenExpDate, userClientRole),
+                    refreshTokenExpDate.getTime(),
+                    now.getTime());
+        } else {
+            refreshTokenDto = new TokenDto(
+                    refreshTokenDto.token(),
+                    refreshTokenDto.expiresAt(),
+                    refreshTokenDto.issuedAt());
+        }
 
-        return new TokenResponse(user.getId(), user.getEmail(), userClientRole.getRole(), accessToken, refreshToken);
+
+        return new TokenResponse(user.getId(), user.getEmail(), userClientRole.getRole(), accessToken, refreshTokenDto);
     }
 
     private String generateToken(User user, Date now, Date expiration, UserClientRole userClientRole) {

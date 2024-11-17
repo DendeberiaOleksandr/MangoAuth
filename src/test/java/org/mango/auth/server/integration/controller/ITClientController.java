@@ -51,6 +51,7 @@ import static org.mango.auth.server.integration.util.TestUtil.ADMIN_USER_EMAIL;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_API_KEY_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_NAME_1;
+import static org.mango.auth.server.integration.util.TestUtil.USER_EMAIL;
 import static org.mango.auth.server.util.ApiPaths.CLIENT_API;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -70,6 +71,8 @@ public class ITClientController extends ITBase {
     @Autowired
     private ClientService clientService;
 
+    private final String emailForUser = "test1231@example.com";
+
 
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -81,8 +84,8 @@ public class ITClientController extends ITBase {
         createUser("test@example.com", "password123",  UserStatus.ACTIVE, Role.ADMIN);
         accessTokenForAdmin = createAndReturnAccessToken("test@example.com", "password123", CLIENT_ID_1);
 
-        createUser("test1231@example.com", "password1123123",  UserStatus.ACTIVE, Role.USER);
-        accessTokenForUser = createAndReturnAccessToken("test1231@example.com", "password1123123", CLIENT_ID_1);
+        createUser(emailForUser, "password1123123",  UserStatus.ACTIVE, Role.USER);
+        accessTokenForUser = createAndReturnAccessToken(emailForUser, "password1123123", CLIENT_ID_1);
 
     }
 
@@ -102,20 +105,32 @@ public class ITClientController extends ITBase {
 
     @Test
     void getUserClientsWhereIsAdminOrOwner_whenHasUserRoleOnly() throws Exception {
-        mvc.perform(get(CLIENT_API).param("email", USER_EMAIL)).andExpect(status().isOk()).andExpect(jsonPath("$", empty())).andDo(print());
+        mvc.perform(
+                        get(CLIENT_API)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForUser)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", empty()))
+                .andDo(print());
     }
+
 
     @Test
     void createClient() throws Exception {
         String clientName = "Client New";
 
-        CreateClientRequest request = new CreateClientRequest(clientName, USER_EMAIL);
+        CreateClientRequest request = new CreateClientRequest(clientName);
 
-        ResultActions result = mvc.perform(post(CLIENT_API).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)));
+        ResultActions result = mvc
+                .perform(
+                        post(CLIENT_API)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForUser)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)));
 
         result.andExpect(status().isCreated()).andDo(print());
 
-        Optional<UserClientRole> createdClient = userClientRoleService.findByUserEmailAndClientName(USER_EMAIL, clientName);
+        Optional<UserClientRole> createdClient = userClientRoleService.findByUserEmailAndClientName(emailForUser, clientName);
         assertTrue(createdClient.isPresent());
         Client client = createdClient.get().getClient();
         assertNotNull(client.getId());
@@ -123,10 +138,8 @@ public class ITClientController extends ITBase {
 
     @Test
     void getById() throws Exception {
-        ResultActions result = mvc.perform(get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString())).param("email", ADMIN_USER_EMAIL));
-
         mvc.perform(
-                        get(CLIENT_API)
+                        get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString()))
                                 .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForUser)
                 )
                 .andExpect(status().isOk())
@@ -166,7 +179,6 @@ public class ITClientController extends ITBase {
                 .id(CLIENT_ID_1)
                 .name(CLIENT_NAME_1)
                 .apiKey("testApiKey")
-                .apiSecret("testApiSecret")
                 .build();
         clientService.save(client);
 

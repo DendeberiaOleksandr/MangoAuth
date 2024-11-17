@@ -8,6 +8,7 @@ import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.mapper.ClientMapper;
 import org.mango.auth.server.repository.ClientRepository;
+import org.mango.auth.server.security.UserDetailsImpl;
 import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.KeyGeneratorService;
 import org.mango.auth.server.service.UserClientRoleService;
@@ -34,15 +35,14 @@ public class ClientServiceImpl implements ClientService {
 
     @Transactional
     @Override
-    public Client create(CreateClientRequest request) {
-        String userEmail = request.userEmail();
+    public Client create(CreateClientRequest request, UserDetailsImpl userDetails) {
 
         String apiKey = keyGeneratorService.generate();
 
         Client client = clientMapper.map(request, apiKey);
         clientRepository.save(client);
 
-        UserClientRole userClientRole = userClientRoleService.getByUserEmailAndMangoClient(userEmail);
+        UserClientRole userClientRole = userClientRoleService.getByUserEmailAndMangoClient(userDetails.getEmail());
 
         UserClientRole usersClient = UserClientRole.builder().client(client).user(userClientRole.getUser()).role(Role.OWNER).build();
 

@@ -3,6 +3,7 @@ package org.mango.auth.server.integration.controller;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mango.auth.server.dto.token.RefreshTokenRequest;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.RefreshToken;
 import org.mango.auth.server.entity.User;
@@ -197,10 +198,13 @@ public class ITTokenController extends ITBase {
 
     @Test
     void refreshAccessToken_whenValidRefreshToken_thenReturnsNewAccessToken() throws Exception {
+        RefreshTokenRequest token = new RefreshTokenRequest(refreshToken);
+        String json = objectMapper.writeValueAsString(token);
+
         Thread.sleep(5000);
         String oldAccessToken = accessToken;
         mvc.perform(post(ApiPaths.TOKEN_REFRESH)
-                        .param("refreshToken", refreshToken)
+                        .content(json)
                         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -214,8 +218,11 @@ public class ITTokenController extends ITBase {
 
     @Test
     void refreshAccessToken_whenInvalidRefreshToken_thenReturnsError() throws Exception {
+        RefreshTokenRequest invalidToken = new RefreshTokenRequest("invalidToken");
+        String json = objectMapper.writeValueAsString(invalidToken);
+
         mvc.perform(post(ApiPaths.TOKEN_REFRESH)
-                        .param("refreshToken", "invalidToken")
+                        .content(json)
                         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden())
@@ -234,8 +241,11 @@ public class ITTokenController extends ITBase {
 
         assertThat(expiredToken.getExpiryAt()).isBefore(now);
 
+        RefreshTokenRequest token = new RefreshTokenRequest(expiredToken.getToken());
+        String json = objectMapper.writeValueAsString(token);
+
         mvc.perform(post(ApiPaths.TOKEN_REFRESH)
-                        .param("refreshToken", expiredToken.getToken())
+                        .content(json)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code", is(EXPIRED_REFRESH_TOKEN_ERROR)))
