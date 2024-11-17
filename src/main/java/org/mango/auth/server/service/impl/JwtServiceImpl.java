@@ -64,6 +64,8 @@ public class JwtServiceImpl implements JwtService {
         return jws.getPayload().get("CLIENT_ID", String.class);
     }
 
+
+
     @Override
     @Transactional
     public TokenResponse generateTokens(User user, Client client) {

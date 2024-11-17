@@ -30,6 +30,17 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import org.mango.auth.server.service.ClientService;
+import org.mango.auth.server.service.UserClientRoleService;
+import org.mango.auth.server.service.UserService;
+import org.mango.auth.server.util.ApiPaths;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
@@ -77,6 +88,7 @@ public class ITClientController extends ITBase {
 
     @Test
     void getUserClientsWhereIsAdminOrOwner() throws Exception {
+
         mvc.perform(
                 get(CLIENT_API)
                         .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForAdmin)
@@ -113,7 +125,6 @@ public class ITClientController extends ITBase {
     void getById() throws Exception {
         ResultActions result = mvc.perform(get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString())).param("email", ADMIN_USER_EMAIL));
 
-        result
         mvc.perform(
                         get(CLIENT_API)
                                 .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForUser)
@@ -125,7 +136,6 @@ public class ITClientController extends ITBase {
                 .andExpect(jsonPath("$.createdAt", notNullValue()))
                 .andDo(print());
     }
-
     @Test
     void getById_whenUserDoesNotHaveAdminRoles() throws Exception {
         ResultActions result = mvc.perform(get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString())).param("email", USER_EMAIL));
