@@ -47,8 +47,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 throw new InvalidTokenException("Invalid JWT token");
             }
 
-            String email = jwtService.getClaimsFromToken(token).getSubject();
-            String clientId = jwtService.getClaimsFromToken(token).get("CLIENT_ID", String.class);
+            var claims = jwtService.getClaimsFromToken(token);
+            String email = claims.getSubject();
+            String clientId = claims.get("CLIENT_ID", String.class);
 
             if (email != null && clientId != null) {
                 UserDetailsImpl userDetails = (UserDetailsImpl) userDetailsService.loadUserByUsername(email + "--" + clientId);
