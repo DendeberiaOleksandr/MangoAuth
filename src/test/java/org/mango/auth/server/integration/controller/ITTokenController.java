@@ -3,6 +3,7 @@ package org.mango.auth.server.integration.controller;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mango.auth.server.dto.token.RefreshTokenRequest;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.RefreshToken;
 import org.mango.auth.server.entity.User;
@@ -12,13 +13,10 @@ import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.integration.ITBase;
 import org.mango.auth.server.integration.util.TestUtil;
 import org.mango.auth.server.repository.RefreshTokenRepository;
-import org.mango.auth.server.service.ClientService;
-import org.mango.auth.server.service.UserClientRoleService;
-import org.mango.auth.server.service.UserService;
 import org.mango.auth.server.util.ApiPaths;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -34,6 +32,7 @@ import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.util.ErrorCodes.EXPIRED_REFRESH_TOKEN_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.INVALID_REFRESH_TOKEN_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.USER_IS_NOT_VERIFIED_ERROR;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -43,15 +42,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ITTokenController extends ITBase {
 
     @Autowired
-    private UserClientRoleService userClientRoleService;
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private ClientService clientService;
-    @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+
+    private static final String BEARER_PREFIX = "Bearer ";
 
     private String refreshToken;
     private String accessToken;
@@ -193,10 +186,13 @@ public class ITTokenController extends ITBase {
 
     @Test
     void refreshAccessToken_whenValidRefreshToken_thenReturnsNewAccessToken() throws Exception {
+        RefreshTokenRequest token = new RefreshTokenRequest(refreshToken);
+        String json = objectMapper.writeValueAsString(token);
+
         Thread.sleep(5000);
         String oldAccessToken = accessToken;
         mvc.perform(post(ApiPaths.TOKEN_REFRESH)
-                        .param("refreshToken", refreshToken)
+                        .content(json)
                         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -210,8 +206,11 @@ public class ITTokenController extends ITBase {
 
     @Test
     void refreshAccessToken_whenInvalidRefreshToken_thenReturnsError() throws Exception {
+        RefreshTokenRequest invalidToken = new RefreshTokenRequest("invalidToken");
+        String json = objectMapper.writeValueAsString(invalidToken);
+
         mvc.perform(post(ApiPaths.TOKEN_REFRESH)
-                        .param("refreshToken", "invalidToken")
+                        .content(json)
                         .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden())
@@ -230,12 +229,35 @@ public class ITTokenController extends ITBase {
 
         assertThat(expiredToken.getExpiryAt()).isBefore(now);
 
+        RefreshTokenRequest token = new RefreshTokenRequest(expiredToken.getToken());
+        String json = objectMapper.writeValueAsString(token);
+
         mvc.perform(post(ApiPaths.TOKEN_REFRESH)
-                        .param("refreshToken", expiredToken.getToken())
+                        .content(json)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code", is(EXPIRED_REFRESH_TOKEN_ERROR)))
                 .andDo(print());
     }
 
+    @Test
+    void testSignOut_SuccessfulRevocation()throws Exception {
+        mvc.perform(
+                        delete(ApiPaths.TOKEN_SIGN_OUT)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + refreshToken)
+
+                )
+                .andExpect(status().isNoContent())
+                .andDo(print());
+    }
+
+    @Test
+    void testSignOut_InvalidToken() throws Exception {
+        mvc.perform(
+                        delete(ApiPaths.TOKEN_SIGN_OUT)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + "invalidToken")
+                )
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
 }

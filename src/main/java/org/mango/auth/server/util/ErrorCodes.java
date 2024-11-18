@@ -12,4 +12,6 @@ public class ErrorCodes {
     public static final String INVALID_REFRESH_TOKEN_ERROR = "invalidRefreshToken";
     public static final String EXPIRED_REFRESH_TOKEN_ERROR = "expiredRefreshTokenError";
     public static final String NOT_FOUND_ERROR = "resourceNotFound";
+    public static final String SERVER_ERROR = "serverError";
+    public static final String INVALID_TOKEN_ERROR = "invalidToken";
 }

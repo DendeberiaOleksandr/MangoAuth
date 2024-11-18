@@ -7,13 +7,13 @@ import org.mango.auth.server.dto.verification.SendUserVerificationEmailRequest;
 import org.mango.auth.server.dto.verification.UserVerificationRequest;
 import org.mango.auth.server.entity.EmailAudit;
 import org.mango.auth.server.entity.User;
+import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.EmailEvent;
+import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.integration.ITBase;
 import org.mango.auth.server.repository.EmailAuditRepository;
 import org.mango.auth.server.service.EmailService;
-import org.mango.auth.server.service.UserClientRoleService;
-import org.mango.auth.server.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.integration.util.TestUtil.USER_EMAIL;
-import static org.mango.auth.server.integration.util.TestUtil.USER_ID;
+import static org.mango.auth.server.integration.util.TestUtil.USER_PASSWORD;
 import static org.mango.auth.server.util.ApiPaths.USER_API;
 import static org.mango.auth.server.util.ErrorCodes.EMAIL_VERIFICATION_CODE_ENTER_LIMIT_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.INVALID_EMAIL_VERIFICATION_CODE_ERROR;
@@ -45,10 +45,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 public class ITUserVerificationController extends ITBase {
 
-    @Autowired
-    UserService userService;
-    @Autowired
-    UserClientRoleService userClientRoleService;
     @MockBean
     EmailService emailService;
     @Autowired
@@ -56,7 +52,10 @@ public class ITUserVerificationController extends ITBase {
 
     @Test
     void verify_whenUserExceedsCodeEnteringAttemptsAndResetTimeIsNotGone() throws Exception {
-        User user = userService.getById(USER_ID);
+        UserClientRole userClientRole = createUser(USER_EMAIL, USER_PASSWORD, UserStatus.UNVERIFIED, Role.USER);
+
+        User user = userClientRole.getUser();
+        user.setEmailVerificationCode("fdfdfd");
         user.setEmailVerificationCodeEnteredTimes(1000);
         user.setEmailVerificationCodeLastEnteredAt(LocalDateTime.now().minusSeconds(10));
         userService.save(user);
@@ -79,7 +78,10 @@ public class ITUserVerificationController extends ITBase {
 
     @Test
     void verify_whenUserExceedsCodeEnteringAttemptsAndResetTimeIsGoneAndInvalidCodeEntered() throws Exception {
-        User user = userService.getById(USER_ID);
+        UserClientRole userClientRole = createUser(USER_EMAIL, USER_PASSWORD, UserStatus.UNVERIFIED, Role.USER);
+
+        User user = userClientRole.getUser();
+        user.setEmailVerificationCode("dsdsds");
         user.setEmailVerificationCodeEnteredTimes(1000);
         user.setEmailVerificationCodeLastEnteredAt(LocalDateTime.now().minusMinutes(500));
         userService.save(user);
@@ -103,7 +105,9 @@ public class ITUserVerificationController extends ITBase {
 
     @Test
     void verify_whenUserExceedsCodeEnteringAttemptsAndResetTimeIsGoneAndValidCodeEntered() throws Exception {
-        User user = userService.getById(USER_ID);
+        UserClientRole userClientRole = createUser(USER_EMAIL, USER_PASSWORD, UserStatus.UNVERIFIED, Role.USER);
+
+        User user = userClientRole.getUser();
         user.setEmailVerificationCode("code");
         user.setEmailVerificationCodeEnteredTimes(1000);
         user.setEmailVerificationCodeLastEnteredAt(LocalDateTime.now().minusMinutes(500));
@@ -127,7 +131,9 @@ public class ITUserVerificationController extends ITBase {
 
     @Test
     void verify_whenUserNotExceedCodeEnteringAttemptsAndValidCodeEntered() throws Exception {
-        User user = userService.getById(USER_ID);
+        UserClientRole userClientRole = createUser(USER_EMAIL, USER_PASSWORD, UserStatus.UNVERIFIED, Role.USER);
+
+        User user = userClientRole.getUser();
         user.setEmailVerificationCode("code");
         user.setEmailVerificationCodeEnteredTimes(1);
         userService.save(user);
@@ -150,7 +156,9 @@ public class ITUserVerificationController extends ITBase {
 
     @Test
     void sendVerificationEmail_whenUserExceedsSendEmailAttemptsAndResetTimeIsNotGone() throws Exception {
-        User user = userService.getById(USER_ID);
+        UserClientRole userClientRole = createUser(USER_EMAIL, USER_PASSWORD, UserStatus.UNVERIFIED, Role.USER);
+
+        User user = userClientRole.getUser();
         user.setEmailVerificationCodeSentTimes(1000);
         user.setEmailVerificationCodeLastSentAt(LocalDateTime.now().minusSeconds(10));
         userService.save(user);
@@ -171,7 +179,9 @@ public class ITUserVerificationController extends ITBase {
 
     @Test
     void sendVerificationEmail_whenUserExceedsSendEmailAttemptsAndResetTimeIsGone() throws Exception {
-        User user = userService.getById(USER_ID);
+        UserClientRole userClientRole = createUser(USER_EMAIL, USER_PASSWORD, UserStatus.UNVERIFIED, Role.USER);
+
+        User user = userClientRole.getUser();
         user.setEmailVerificationCodeSentTimes(1000);
         user.setEmailVerificationCodeLastSentAt(LocalDateTime.now().minusDays(31));
         userService.save(user);
@@ -197,7 +207,9 @@ public class ITUserVerificationController extends ITBase {
 
     @Test
     void sendVerificationEmail_whenUserNotExceedSendEmailAttempts() throws Exception {
-        User user = userService.getById(USER_ID);
+        UserClientRole userClientRole = createUser(USER_EMAIL, USER_PASSWORD, UserStatus.UNVERIFIED, Role.USER);
+
+        User user = userClientRole.getUser();
         user.setEmailVerificationCodeSentTimes(1);
         userService.save(user);
 

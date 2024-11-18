@@ -1,16 +1,28 @@
 package org.mango.auth.server.integration.controller;
 
+import com.jayway.jsonpath.JsonPath;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mango.auth.server.dto.client.CreateClientRequest;
 import org.mango.auth.server.entity.Client;
+import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
+import org.mango.auth.server.dto.client.CreateClientRequest;
 import org.mango.auth.server.enums.Role;
+import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.integration.ITBase;
+import org.mango.auth.server.repository.UserClientRoleRepository;
+import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.UserClientRoleService;
+import org.mango.auth.server.service.UserService;
+import org.mango.auth.server.util.ApiPaths;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.Optional;
 
@@ -35,11 +47,37 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ITClientController extends ITBase {
 
     @Autowired
-    UserClientRoleService userClientRoleService;
+    private UserClientRoleService userClientRoleService;
+    @Autowired
+    private UserClientRoleRepository repository;
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private ClientService clientService;
+
+    private static final String BEARER_PREFIX = "Bearer ";
+
+    private String accessTokenForAdmin;
+    private String accessTokenForUser;
+
+    @BeforeEach
+    public void setUp() {
+        createUser(ADMIN_USER_EMAIL, "password123",  UserStatus.ACTIVE, Role.ADMIN);
+        accessTokenForAdmin = createAndReturnAccessToken(ADMIN_USER_EMAIL, "password123", CLIENT_ID_1);
+
+        createUser(USER_EMAIL, "password1123123",  UserStatus.ACTIVE, Role.USER);
+        accessTokenForUser = createAndReturnAccessToken(USER_EMAIL, "password1123123", CLIENT_ID_1);
+    }
 
     @Test
     void getUserClientsWhereIsAdminOrOwner() throws Exception {
-        mvc.perform(get(CLIENT_API).param("email", ADMIN_USER_EMAIL))
+
+        mvc.perform(
+                get(CLIENT_API)
+                        .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForAdmin)
+        )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id", is(CLIENT_ID_1.toString())))
                 .andExpect(jsonPath("$[0].name", is(CLIENT_NAME_1)))
@@ -49,20 +87,32 @@ public class ITClientController extends ITBase {
 
     @Test
     void getUserClientsWhereIsAdminOrOwner_whenHasUserRoleOnly() throws Exception {
-        mvc.perform(get(CLIENT_API).param("email", USER_EMAIL)).andExpect(status().isOk()).andExpect(jsonPath("$", empty())).andDo(print());
+        mvc.perform(
+                        get(CLIENT_API)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForUser)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", empty()))
+                .andDo(print());
     }
+
 
     @Test
     void createClient() throws Exception {
         String clientName = "Client New";
 
-        CreateClientRequest request = new CreateClientRequest(clientName, USER_EMAIL);
+        CreateClientRequest request = new CreateClientRequest(clientName);
 
-        ResultActions result = mvc.perform(post(CLIENT_API).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)));
+        ResultActions result = mvc
+                .perform(
+                        post(CLIENT_API)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForAdmin)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)));
 
         result.andExpect(status().isCreated()).andDo(print());
 
-        Optional<UserClientRole> createdClient = userClientRoleService.findByUserEmailAndClientName(USER_EMAIL, clientName);
+        Optional<UserClientRole> createdClient = userClientRoleService.findByUserEmailAndClientName(ADMIN_USER_EMAIL, clientName);
         assertTrue(createdClient.isPresent());
         Client client = createdClient.get().getClient();
         assertNotNull(client.getId());
@@ -70,9 +120,10 @@ public class ITClientController extends ITBase {
 
     @Test
     void getById() throws Exception {
-        ResultActions result = mvc.perform(get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString())).param("email", ADMIN_USER_EMAIL));
-
-        result
+        mvc.perform(
+                        get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString()))
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForAdmin)
+                )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(CLIENT_ID_1.toString())))
                 .andExpect(jsonPath("$.name", is(CLIENT_NAME_1)))
@@ -80,7 +131,6 @@ public class ITClientController extends ITBase {
                 .andExpect(jsonPath("$.createdAt", notNullValue()))
                 .andDo(print());
     }
-
     @Test
     void getById_whenUserDoesNotHaveAdminRoles() throws Exception {
         ResultActions result = mvc.perform(get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString())).param("email", USER_EMAIL));
@@ -89,4 +139,14 @@ public class ITClientController extends ITBase {
                 .andExpect(status().isForbidden())
                 .andDo(print());
     }
+
+    @Test
+    void getUserClientsWhereIsAdminOrOwner_withoutToken_shouldReturnUnauthorized() throws Exception {
+        mvc.perform(
+                        get(CLIENT_API)
+                )
+                .andExpect((status().isForbidden()))
+                .andDo(print());
+    }
+
 }

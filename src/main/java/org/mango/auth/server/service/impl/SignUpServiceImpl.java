@@ -2,7 +2,6 @@ package org.mango.auth.server.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.dto.SignUp.SignUpRequest;
-import org.mango.auth.server.dto.verification.SendUserVerificationEmailRequest;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;

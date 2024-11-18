@@ -1,6 +1,7 @@
 package org.mango.auth.server.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.mango.auth.server.dto.token.RefreshTokenRequest;
 import org.mango.auth.server.dto.token.TokenRequest;
 import org.mango.auth.server.dto.token.TokenResponse;
 import org.mango.auth.server.entity.Client;
@@ -10,6 +11,7 @@ import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.exception.ExpiredRefreshTokenException;
 import org.mango.auth.server.exception.InvalidRefreshTokenException;
+import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.exception.UserIsNotVerifiedException;
 import org.mango.auth.server.mapper.RefreshTokenMapper;
 import org.mango.auth.server.repository.RefreshTokenRepository;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mango.auth.server.util.DateTimeUtils.convertMillisToLocalDateTime;
@@ -51,7 +54,19 @@ public class TokenServiceImpl implements TokenService {
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BadCredentialsException("Invalid password");
         }
-        TokenResponse tokenResponse = jwtService.generateTokens(user);
+
+        Optional<RefreshToken> existingTokenOpt = refreshTokenRepository.findByUser_EmailAndClient_Id(email, clientId);
+        if (existingTokenOpt.isPresent()) {
+            RefreshToken existingToken = existingTokenOpt.get();
+
+            if (existingToken.getExpiryAt().isAfter(LocalDateTime.now())) {
+                return jwtService.generateTokens(user,userEmailAndClientId.getClient(), existingToken);
+            } else {
+                refreshTokenRepository.delete(existingToken);
+            }
+        }
+
+        TokenResponse tokenResponse = jwtService.generateTokens(user, userEmailAndClientId.getClient());
 
         LocalDateTime dateTimeIssuedAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().issuedAt());
         LocalDateTime dateTimeExpiresAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().expiresAt());
@@ -67,8 +82,8 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     @Transactional
-    public TokenResponse refreshAccessToken(String refreshTokenValue) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenValue)
+    public TokenResponse refreshAccessToken(RefreshTokenRequest request) {
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(request.refreshToken())
                 .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
         if(refreshToken.getExpiryAt().isBefore(LocalDateTime.now())){
@@ -77,15 +92,23 @@ public class TokenServiceImpl implements TokenService {
         }
 
         User user = refreshToken.getUser();
+        Client client = refreshToken.getClient();
 
-        return jwtService.generateTokens(user);
+        return jwtService.generateTokens(user, client, refreshToken);
     }
 
     @Override
     @Transactional
-    public void revokeRefreshToken(User user, Client client) {
-        refreshTokenRepository.findByUserAndClient(user, client)
-                .ifPresent(refreshTokenRepository::delete);
+    public void revokeRefreshToken(String email, UUID clientId) {
+
+        Optional<RefreshToken> optionalRefreshToken = refreshTokenRepository.findByUser_EmailAndClient_Id(email, clientId);
+
+        optionalRefreshToken.ifPresentOrElse(
+                refreshTokenRepository::delete,
+                () -> {
+                    throw new NotFoundException("No refresh token found for the given user and client");
+                }
+        );
     }
 
     public void saveRefreshToken(User user,
