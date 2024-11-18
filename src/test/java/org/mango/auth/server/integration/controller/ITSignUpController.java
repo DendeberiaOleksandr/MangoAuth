@@ -28,13 +28,8 @@ import java.util.concurrent.CompletableFuture;
 @Transactional
 public class ITSignUpController extends ITBase {
 
-    @Autowired
-    private UserClientRoleService userClientRoleService;
-    @Autowired
-    private UserService userService;
     @MockBean
     private EmailService emailService;
-
 
     @Test
     void signUp_whenValidRequest_thenReturns200() throws Exception {

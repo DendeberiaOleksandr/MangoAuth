@@ -15,6 +15,7 @@ import org.mango.auth.server.service.UserClientRoleService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -42,11 +43,12 @@ public class ClientServiceImpl implements ClientService {
         Client client = clientMapper.map(request, apiKey);
         clientRepository.save(client);
 
-        UserClientRole userClientRole = userClientRoleService.getByUserEmailAndMangoClient(userDetails.getEmail());
+        UserClientRole usersClient = UserClientRole.builder().client(client).user(userDetails.getUser()).role(Role.OWNER).build();
+        client.setUserRoles(List.of(usersClient));
 
-        UserClientRole usersClient = UserClientRole.builder().client(client).user(userClientRole.getUser()).role(Role.OWNER).build();
+        userClientRoleService.save(usersClient);
 
-        return userClientRoleService.save(usersClient).getClient();
+        return client;
     }
 
     @Transactional

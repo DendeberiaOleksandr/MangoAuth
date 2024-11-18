@@ -6,6 +6,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.mango.auth.server.controller.handler.ApiErrorHandler;
+import org.mango.auth.server.exception.InvalidTokenException;
 import org.mango.auth.server.service.JwtService;
 import org.mango.auth.server.service.impl.UserDetailsServiceImpl;
 import org.springframework.http.HttpHeaders;
@@ -23,9 +25,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsServiceImpl userDetailsService;
+    private final ApiErrorHandler apiErrorHandler;
 
-    private static final String BEARER_PREFIX = "Bearer ";
-
+    public static final String BEARER_PREFIX = "Bearer ";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -42,7 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             if (!jwtService.validateToken(token)) {
-                throw new JwtException("Invalid JWT token");
+                throw new InvalidTokenException("Invalid JWT token");
             }
 
             String email = jwtService.getClaimsFromToken(token).getSubject();
@@ -56,14 +58,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
             }
-        } catch (JwtException e) {
-            // TODO
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Invalid or expired token: " + e.getMessage());
-            return;
         } catch (Exception e) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            response.getWriter().write("An unexpected error occurred: " + e.getMessage());
+            apiErrorHandler.handleException(e, response);
             return;
         }
 

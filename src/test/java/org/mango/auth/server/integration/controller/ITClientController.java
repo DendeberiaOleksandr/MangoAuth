@@ -10,6 +10,7 @@ import org.mango.auth.server.dto.client.CreateClientRequest;
 import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.integration.ITBase;
+import org.mango.auth.server.repository.UserClientRoleRepository;
 import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
@@ -30,6 +31,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mango.auth.server.integration.util.TestUtil.ADMIN_USER_EMAIL;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_API_KEY_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_NAME_1;
@@ -47,14 +49,13 @@ public class ITClientController extends ITBase {
     @Autowired
     private UserClientRoleService userClientRoleService;
     @Autowired
+    private UserClientRoleRepository repository;
+    @Autowired
     private UserService userService;
     @Autowired
     private PasswordEncoder passwordEncoder;
     @Autowired
     private ClientService clientService;
-
-    private final String emailForUser = "test1231@example.com";
-
 
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -63,12 +64,11 @@ public class ITClientController extends ITBase {
 
     @BeforeEach
     public void setUp() {
-        createUser("test@example.com", "password123",  UserStatus.ACTIVE, Role.ADMIN);
-        accessTokenForAdmin = createAndReturnAccessToken("test@example.com", "password123", CLIENT_ID_1);
+        createUser(ADMIN_USER_EMAIL, "password123",  UserStatus.ACTIVE, Role.ADMIN);
+        accessTokenForAdmin = createAndReturnAccessToken(ADMIN_USER_EMAIL, "password123", CLIENT_ID_1);
 
-        createUser(emailForUser, "password1123123",  UserStatus.ACTIVE, Role.USER);
-        accessTokenForUser = createAndReturnAccessToken(emailForUser, "password1123123", CLIENT_ID_1);
-
+        createUser(USER_EMAIL, "password1123123",  UserStatus.ACTIVE, Role.USER);
+        accessTokenForUser = createAndReturnAccessToken(USER_EMAIL, "password1123123", CLIENT_ID_1);
     }
 
     @Test
@@ -99,7 +99,6 @@ public class ITClientController extends ITBase {
 
     @Test
     void createClient() throws Exception {
-        // TODO
         String clientName = "Client New";
 
         CreateClientRequest request = new CreateClientRequest(clientName);
@@ -107,13 +106,13 @@ public class ITClientController extends ITBase {
         ResultActions result = mvc
                 .perform(
                         post(CLIENT_API)
-                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForUser)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForAdmin)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)));
 
         result.andExpect(status().isCreated()).andDo(print());
 
-        Optional<UserClientRole> createdClient = userClientRoleService.findByUserEmailAndClientName(emailForUser, clientName);
+        Optional<UserClientRole> createdClient = userClientRoleService.findByUserEmailAndClientName(ADMIN_USER_EMAIL, clientName);
         assertTrue(createdClient.isPresent());
         Client client = createdClient.get().getClient();
         assertNotNull(client.getId());
@@ -121,10 +120,9 @@ public class ITClientController extends ITBase {
 
     @Test
     void getById() throws Exception {
-        // TODO
         mvc.perform(
                         get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString()))
-                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForUser)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForAdmin)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(CLIENT_ID_1.toString())))
@@ -149,51 +147,6 @@ public class ITClientController extends ITBase {
                 )
                 .andExpect((status().isForbidden()))
                 .andDo(print());
-    }
-
-    private void createUser(String email, String password, UserStatus userStatus, Role role) {
-        User user = User.builder()
-                .email(email)
-                .userStatus(userStatus)
-                .password(passwordEncoder.encode(password))
-                .build();
-        userService.save(user);
-
-        Client client = Client.builder()
-                .id(CLIENT_ID_1)
-                .name(CLIENT_NAME_1)
-                .apiKey("testApiKey")
-                .build();
-        clientService.save(client);
-
-        UserClientRole userClientRole = UserClientRole.builder()
-                .user(user)
-                .client(client)
-                .role(role)
-                .build();
-        userClientRoleService.save(userClientRole);
-    }
-
-    private String createAndReturnAccessToken(String email, String password, UUID clientId) {
-        String jsonRequest = String.format("""
-        {
-            "clientId": "%s",
-            "email": "%s",
-            "password": "%s"
-        }
-    """, clientId, email, password);
-
-        try {
-            String response = mvc.perform(post(ApiPaths.TOKEN)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(jsonRequest))
-                    .andExpect(status().isOk())
-                    .andReturn().getResponse().getContentAsString();
-
-            return JsonPath.read(response, "$.accessToken.token");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create access token", e);
-        }
     }
 
 }

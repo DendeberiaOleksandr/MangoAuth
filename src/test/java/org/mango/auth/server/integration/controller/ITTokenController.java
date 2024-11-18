@@ -13,14 +13,10 @@ import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.integration.ITBase;
 import org.mango.auth.server.integration.util.TestUtil;
 import org.mango.auth.server.repository.RefreshTokenRepository;
-import org.mango.auth.server.service.ClientService;
-import org.mango.auth.server.service.UserClientRoleService;
-import org.mango.auth.server.service.UserService;
 import org.mango.auth.server.util.ApiPaths;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -45,14 +41,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 public class ITTokenController extends ITBase {
 
-    @Autowired
-    private UserClientRoleService userClientRoleService;
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-    @Autowired
-    private ClientService clientService;
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
