@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
+import java.time.ZoneOffset;
 import java.util.Date;
 
 @Slf4j
@@ -86,9 +87,9 @@ public class JwtServiceImpl implements JwtService {
                     now.getTime());
         } else {
             refreshTokenDto = new TokenDto(
-                    refreshTokenDto.token(),
-                    refreshTokenDto.expiresAt(),
-                    refreshTokenDto.issuedAt());
+                    refreshToken.getToken(),
+                    refreshToken.getExpiryAt().toInstant(ZoneOffset.UTC).toEpochMilli(),
+                    refreshToken.getIssuedAt().toInstant(ZoneOffset.UTC).toEpochMilli());
         }
 
 

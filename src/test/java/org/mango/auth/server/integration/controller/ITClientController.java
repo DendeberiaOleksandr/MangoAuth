@@ -7,8 +7,6 @@ import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.dto.client.CreateClientRequest;
-import org.mango.auth.server.entity.Client;
-import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.integration.ITBase;
@@ -23,31 +21,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
-import org.mango.auth.server.service.UserClientRoleService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
-import org.mango.auth.server.service.ClientService;
-import org.mango.auth.server.service.UserClientRoleService;
-import org.mango.auth.server.service.UserService;
-import org.mango.auth.server.util.ApiPaths;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mango.auth.server.integration.util.TestUtil.ADMIN_USER_EMAIL;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_API_KEY_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_NAME_1;
@@ -117,6 +99,7 @@ public class ITClientController extends ITBase {
 
     @Test
     void createClient() throws Exception {
+        // TODO
         String clientName = "Client New";
 
         CreateClientRequest request = new CreateClientRequest(clientName);
@@ -138,6 +121,7 @@ public class ITClientController extends ITBase {
 
     @Test
     void getById() throws Exception {
+        // TODO
         mvc.perform(
                         get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString()))
                                 .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessTokenForUser)

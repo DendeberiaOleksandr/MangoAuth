@@ -54,9 +54,18 @@ public class TokenServiceImpl implements TokenService {
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new BadCredentialsException("Invalid password");
         }
-        //------------------------------------------------------------
-        // смотреть в бд если там уже есть токен то используем его если просрочен то рефрешаем
-        //------------------------------------------------------------
+
+        Optional<RefreshToken> existingTokenOpt = refreshTokenRepository.findByUser_EmailAndClient_Id(email, clientId);
+        if (existingTokenOpt.isPresent()) {
+            RefreshToken existingToken = existingTokenOpt.get();
+
+            if (existingToken.getExpiryAt().isAfter(LocalDateTime.now())) {
+                return jwtService.generateTokens(user,userEmailAndClientId.getClient(), existingToken);
+            } else {
+                refreshTokenRepository.delete(existingToken);
+            }
+        }
+
         TokenResponse tokenResponse = jwtService.generateTokens(user, userEmailAndClientId.getClient());
 
         LocalDateTime dateTimeIssuedAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().issuedAt());
