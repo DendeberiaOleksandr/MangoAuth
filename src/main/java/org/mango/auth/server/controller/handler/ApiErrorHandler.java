@@ -34,7 +34,7 @@ public class ApiErrorHandler {
         }
         ResponseEntity<ApiErrorResponse> responseEntity = handleException((ApiException) e);
         response.setStatus(responseEntity.getStatusCode().value());
-        response.setContentType(MediaType.APPLICATION_JSON.getType());
+        response.setContentType(MediaType.APPLICATION_JSON.toString());
         response.getWriter().write(objectMapper.writeValueAsString(responseEntity.getBody()));
     }
 
