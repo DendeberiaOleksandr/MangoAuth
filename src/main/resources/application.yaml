@@ -1,9 +1,3 @@
-app:
-  mail:
-    username: dendeberiaoleksandr@gmail.com
-    password: wzkl mmqc yres yegu
-  token:
-    secret: mdajLhQvlMXigj2NvzypqRA/uS5FUD7WsiaQiRW4kvf5EYhwDCsNqONGfvl//FX81LNfObsJ32YXwmpC8bngvy71lm3nL0lcvSNZrNPUZOAHNae8FEdn92IIeZxq9NtXP/sXNiRHOgSsK0rYbcX1ozU0uwIh5XgPSgeWOPzck9K+tp9QdalGVzxbv/E97GN7ToEWgI82B6J+1s12ojmojfN1Bh1mt6yD/iZv+YCbMWy4OoW9GvpR8HZ9A7mOpV/7FN4Ffq42EE0FYgXkj4yMakeLqpNh6faPMeqaZhiPfvNR5kDN96WmoijNSViOk9IdWkeYb/1
 spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
@@ -18,11 +12,9 @@ spring:
     open-in-view: false
 
 flyway:
-  url: jdbc:postgresql://localhost:5432/mangoauth
-  schemas: public
-  user: postgres
-  password: postgres
-
+  url: ${spring.datasource.url}
+  user: ${spring.datasource.username}
+  password: ${spring.datasource.password}
 
 management:
   endpoint:
