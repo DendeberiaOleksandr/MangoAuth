@@ -1,6 +1,7 @@
 package org.mango.auth.server.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.mango.auth.server.dto.token.IntrospectTokenResponse;
 import org.mango.auth.server.dto.token.RefreshTokenRequest;
 import org.mango.auth.server.dto.token.TokenRequest;
 import org.mango.auth.server.dto.token.TokenResponse;
@@ -14,7 +15,9 @@ import org.mango.auth.server.exception.InvalidRefreshTokenException;
 import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.exception.UserIsNotVerifiedException;
 import org.mango.auth.server.mapper.RefreshTokenMapper;
+import org.mango.auth.server.mapper.TokenMapper;
 import org.mango.auth.server.repository.RefreshTokenRepository;
+import org.mango.auth.server.security.UserDetailsImpl;
 import org.mango.auth.server.service.JwtService;
 import org.mango.auth.server.service.TokenService;
 import org.mango.auth.server.service.UserClientRoleService;
@@ -38,6 +41,7 @@ public class TokenServiceImpl implements TokenService {
     private final UserClientRoleService userClientRoleService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RefreshTokenMapper refreshTokenMapper;
+    private final TokenMapper tokenMapper;
 
     @Override
     @Transactional
@@ -109,6 +113,11 @@ public class TokenServiceImpl implements TokenService {
                     throw new NotFoundException("No refresh token found for the given user and client");
                 }
         );
+    }
+
+    @Override
+    public IntrospectTokenResponse introspect(UserDetailsImpl userDetails) {
+        return tokenMapper.map(userDetails);
     }
 
     public void saveRefreshToken(User user,

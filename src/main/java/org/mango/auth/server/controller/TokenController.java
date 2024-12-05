@@ -3,6 +3,7 @@ package org.mango.auth.server.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.mango.auth.server.dto.token.IntrospectTokenResponse;
 import org.mango.auth.server.dto.token.RefreshTokenRequest;
 import org.mango.auth.server.dto.token.TokenRequest;
 import org.mango.auth.server.dto.token.TokenResponse;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -62,5 +64,13 @@ public class TokenController {
 
         tokenService.revokeRefreshToken(email, clientId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping(ApiPaths.TOKEN_INTROSPECT)
+    public ResponseEntity<IntrospectTokenResponse> introspect(Authentication authentication) {
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        IntrospectTokenResponse introspect = tokenService.introspect(userDetails);
+        return ResponseEntity.ok(introspect);
     }
 }
