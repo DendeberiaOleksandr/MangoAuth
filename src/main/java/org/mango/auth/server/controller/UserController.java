@@ -2,7 +2,6 @@ package org.mango.auth.server.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.dto.user.UserLightDto;
-import org.mango.auth.server.entity.User;
 import org.mango.auth.server.security.UserDetailsImpl;
 import org.mango.auth.server.service.UserService;
 import org.springframework.data.domain.Page;
@@ -31,7 +30,7 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<Page<UserLightDto>> searchUsers(Authentication authentication,
-                                                          @RequestParam("clientId") UUID clientId, Pageable pageable) {
+                                                          @RequestParam(value = "clientId", required = false) UUID clientId, Pageable pageable) {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         return ResponseEntity.ok(userService.search(clientId, userDetails, pageable));
     }

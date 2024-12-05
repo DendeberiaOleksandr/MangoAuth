@@ -10,7 +10,7 @@ import org.springframework.http.HttpHeaders;
 import static org.hamcrest.Matchers.is;
 import static org.mango.auth.server.security.JwtAuthenticationFilter.BEARER_PREFIX;
 import static org.mango.auth.server.util.ApiPaths.CLIENT_API;
-import static org.mango.auth.server.util.ErrorCodes.INVALID_TOKEN_ERROR;
+import static org.mango.auth.server.util.ErrorCodes.INVALID_CREDENTIALS_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.SERVER_ERROR;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -35,7 +35,7 @@ public class ITJwtAuthenticationFilter extends ITBase {
                         .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + "some token")
         )
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code", is(INVALID_TOKEN_ERROR)))
+                .andExpect(jsonPath("$.code", is(INVALID_CREDENTIALS_ERROR)))
                 .andExpect(jsonPath("$.message", is("Invalid JWT token")))
                 .andDo(print());
     }

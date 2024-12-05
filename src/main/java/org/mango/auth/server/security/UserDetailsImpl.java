@@ -3,6 +3,7 @@ package org.mango.auth.server.security;
 
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.User;
+import org.mango.auth.server.enums.AccountType;
 import org.mango.auth.server.enums.Role;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,11 +17,21 @@ public class UserDetailsImpl implements UserDetails {
     private final User user;
     private final Client client;
     private final Role role;
+    private final AccountType accountType;
 
     public UserDetailsImpl(User user, Client client, Role role) {
+        this(user, client, role, AccountType.USER);
+    }
+
+    public UserDetailsImpl(User user, Client client, Role role, AccountType accountType) {
         this.user = user;
         this.client = client;
         this.role = role;
+        this.accountType = accountType;
+    }
+
+    public AccountType getAccountType() {
+        return accountType;
     }
 
     public User getUser() {
@@ -46,12 +57,18 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getPassword();
+        if (accountType.equals(AccountType.USER)) {
+            return user.getPassword();
+        }
+        return client.getSecretKey();
     }
 
     @Override
     public String getUsername() {
-        return user.getEmail() + "--" + client.getId();
+        if (accountType.equals(AccountType.USER)) {
+            return user.getEmail() + "--" + client.getId();
+        }
+        return client.getId().toString();
     }
 
     @Override

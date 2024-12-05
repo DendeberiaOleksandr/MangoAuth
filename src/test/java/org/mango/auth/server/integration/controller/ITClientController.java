@@ -1,10 +1,8 @@
 package org.mango.auth.server.integration.controller;
 
-import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mango.auth.server.entity.Client;
-import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.dto.client.CreateClientRequest;
 import org.mango.auth.server.enums.Role;
@@ -14,14 +12,12 @@ import org.mango.auth.server.repository.UserClientRoleRepository;
 import org.mango.auth.server.service.ClientService;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
-import org.mango.auth.server.util.ApiPaths;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.Optional;
@@ -98,7 +94,7 @@ public class ITClientController extends ITBase {
 
 
     @Test
-    void createClient() throws Exception {
+    void createClient_whenValidRequest() throws Exception {
         String clientName = "Client New";
 
         CreateClientRequest request = new CreateClientRequest(clientName);
@@ -110,7 +106,13 @@ public class ITClientController extends ITBase {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)));
 
-        result.andExpect(status().isCreated()).andDo(print());
+        result
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id", notNullValue()))
+                .andExpect(jsonPath("$.name", is(clientName)))
+                .andExpect(jsonPath("$.secretKey", notNullValue()))
+                .andExpect(jsonPath("$.createdAt", notNullValue()))
+                .andDo(print());
 
         Optional<UserClientRole> createdClient = userClientRoleService.findByUserEmailAndClientName(ADMIN_USER_EMAIL, clientName);
         assertTrue(createdClient.isPresent());

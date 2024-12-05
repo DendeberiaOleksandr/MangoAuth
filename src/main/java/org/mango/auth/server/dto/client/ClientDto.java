@@ -15,6 +15,5 @@ import java.util.UUID;
 public class ClientDto {
     private UUID id;
     private String name;
-    private String apiKey;
     private LocalDateTime createdAt;
 }

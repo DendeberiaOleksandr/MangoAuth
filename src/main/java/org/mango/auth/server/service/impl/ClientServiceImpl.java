@@ -2,6 +2,8 @@ package org.mango.auth.server.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.dto.client.CreateClientRequest;
+import org.mango.auth.server.dto.client.CreateClientResponse;
+import org.mango.auth.server.dto.key.SecretKey;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.enums.Role;
@@ -10,7 +12,7 @@ import org.mango.auth.server.mapper.ClientMapper;
 import org.mango.auth.server.repository.ClientRepository;
 import org.mango.auth.server.security.UserDetailsImpl;
 import org.mango.auth.server.service.ClientService;
-import org.mango.auth.server.service.KeyGeneratorService;
+import org.mango.auth.server.service.SecretKeyService;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +26,7 @@ public class ClientServiceImpl implements ClientService {
 
     private final ClientRepository clientRepository;
     private final UserClientRoleService userClientRoleService;
-    private final KeyGeneratorService keyGeneratorService;
+    private final SecretKeyService secretKeyService;
     private final ClientMapper clientMapper;
 
     @Transactional(readOnly = true)
@@ -36,11 +38,10 @@ public class ClientServiceImpl implements ClientService {
 
     @Transactional
     @Override
-    public Client create(CreateClientRequest request, UserDetailsImpl userDetails) {
+    public CreateClientResponse create(CreateClientRequest request, UserDetailsImpl userDetails) {
+        SecretKey secretKey = secretKeyService.generate();
 
-        String apiKey = keyGeneratorService.generate();
-
-        Client client = clientMapper.map(request, apiKey);
+        Client client = clientMapper.map(request, secretKey);
         clientRepository.save(client);
 
         UserClientRole usersClient = UserClientRole.builder().client(client).user(userDetails.getUser()).role(Role.OWNER).build();
@@ -48,7 +49,7 @@ public class ClientServiceImpl implements ClientService {
 
         userClientRoleService.save(usersClient);
 
-        return client;
+        return clientMapper.mapToResponse(client, secretKey);
     }
 
     @Transactional

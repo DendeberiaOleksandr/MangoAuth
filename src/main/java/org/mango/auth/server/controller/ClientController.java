@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.mango.auth.server.dto.client.CreateClientRequest;
 import org.mango.auth.server.dto.client.ClientDto;
+import org.mango.auth.server.dto.client.CreateClientResponse;
 import org.mango.auth.server.dto.client.UserClientRoleLightDto;
 import org.mango.auth.server.security.UserDetailsImpl;
 import org.mango.auth.server.entity.Client;
@@ -51,12 +52,12 @@ public class ClientController {
     }
 
     @PostMapping
-    public ResponseEntity<UUID> createClient(@RequestBody @Valid CreateClientRequest request,
-                                             Authentication authentication) {
+    public ResponseEntity<CreateClientResponse> createClient(@RequestBody @Valid CreateClientRequest request,
+                                                             Authentication authentication) {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-        Client client = clientService.create(request , userDetails);
-        return ResponseEntity.status(HttpStatus.CREATED).body(client.getId());
+        CreateClientResponse response = clientService.create(request , userDetails);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
 }
