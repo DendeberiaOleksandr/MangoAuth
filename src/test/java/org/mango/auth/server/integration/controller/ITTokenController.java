@@ -1,6 +1,7 @@
 package org.mango.auth.server.integration.controller;
 
 import com.jayway.jsonpath.JsonPath;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mango.auth.server.dto.token.RefreshTokenRequest;
@@ -27,12 +28,15 @@ import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertNotEquals;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
+import static org.mango.auth.server.integration.util.TestUtil.CLIENT_NAME_1;
 import static org.mango.auth.server.util.ErrorCodes.EXPIRED_REFRESH_TOKEN_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.INVALID_REFRESH_TOKEN_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.USER_IS_NOT_VERIFIED_ERROR;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,6 +44,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @Transactional
 public class ITTokenController extends ITBase {
+
+    private static final String EMAIL = "test@example.com";
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
@@ -51,10 +57,10 @@ public class ITTokenController extends ITBase {
 
     @BeforeEach
     public void setUp() {
-        createUser("test@example.com", "password123", String.valueOf(CLIENT_ID_1));
-        createUser("test@example.com", "password456", String.valueOf(TestUtil.CLIENT_ID_2));
+        createUser(EMAIL, "password123", String.valueOf(CLIENT_ID_1));
+        createUser(EMAIL, "password456", String.valueOf(TestUtil.CLIENT_ID_2));
 
-        Map<String, String> tokens = createAndReturnTokens("test@example.com", "password123", CLIENT_ID_1);
+        Map<String, String> tokens = createAndReturnTokens(EMAIL, "password123", CLIENT_ID_1);
         refreshToken = tokens.get("refreshToken");
         accessToken = tokens.get("accessToken");
     }
@@ -256,6 +262,33 @@ public class ITTokenController extends ITBase {
         mvc.perform(
                         delete(ApiPaths.TOKEN_SIGN_OUT)
                                 .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + "invalidToken")
+                )
+                .andExpect(status().isUnauthorized())
+                .andDo(print());
+    }
+
+    @SneakyThrows
+    @Test
+    void introspect_validToken() {
+        mvc.perform(
+                        get(ApiPaths.TOKEN_INTROSPECT)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessToken)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email", is(EMAIL)))
+                .andExpect(jsonPath("$.clientId", is(CLIENT_ID_1.toString())))
+                .andExpect(jsonPath("$.clientName", is(CLIENT_NAME_1)))
+                .andExpect(jsonPath("$.registeredAt", notNullValue()))
+                .andExpect(jsonPath("$.role", is(Role.USER.name())))
+                .andDo(print());
+    }
+
+    @SneakyThrows
+    @Test
+    void introspect_invalidToken() {
+        mvc.perform(
+                        get(ApiPaths.TOKEN_INTROSPECT)
+                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + "invalid")
                 )
                 .andExpect(status().isUnauthorized())
                 .andDo(print());

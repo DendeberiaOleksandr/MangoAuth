@@ -12,4 +12,5 @@ public class ApiPaths {
     public static final String CLIENT_API = API_BASE + "/clients";
     public static final String TOKEN_REFRESH = TOKEN + "/refresh";
     public static final String TOKEN_SIGN_OUT = TOKEN + "/sign-out";
+    public static final String TOKEN_INTROSPECT = TOKEN + "/introspect";
 }
