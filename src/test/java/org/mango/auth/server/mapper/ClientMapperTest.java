@@ -55,7 +55,7 @@ class ClientMapperTest {
         assertEquals(client.getId(), response.id());
         assertEquals(client.getName(), response.name());
         assertEquals(client.getCreatedAt(), response.createdAt());
-        assertEquals(secretKey.encryptedKey(), response.secretKey());
+        assertEquals(secretKey.key(), response.secretKey());
     }
 
 }

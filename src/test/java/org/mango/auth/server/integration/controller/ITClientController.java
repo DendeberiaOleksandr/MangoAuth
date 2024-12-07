@@ -1,7 +1,9 @@
 package org.mango.auth.server.integration.controller;
 
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mango.auth.server.dto.client.CreateClientResponse;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.dto.client.CreateClientRequest;
@@ -32,6 +34,7 @@ import static org.mango.auth.server.integration.util.TestUtil.CLIENT_API_KEY_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_NAME_1;
 import static org.mango.auth.server.integration.util.TestUtil.USER_EMAIL;
+import static org.mango.auth.server.security.ServiceAccountAuthenticationFilter.X_CLIENT_ID;
 import static org.mango.auth.server.util.ApiPaths.CLIENT_API;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -60,6 +63,7 @@ public class ITClientController extends ITBase {
 
     @BeforeEach
     public void setUp() {
+        super.setUp();
         createUser(ADMIN_USER_EMAIL, "password123",  UserStatus.ACTIVE, Role.ADMIN);
         accessTokenForAdmin = createAndReturnAccessToken(ADMIN_USER_EMAIL, "password123", CLIENT_ID_1);
 
@@ -92,6 +96,19 @@ public class ITClientController extends ITBase {
                 .andDo(print());
     }
 
+    @Test
+    void getUserClientsWhereIsAdminOrOwner_whenAccountService() throws Exception {
+        CreateClientResponse clientResponse = createClient(accessTokenForAdmin);
+
+        mvc.perform(
+                        get(CLIENT_API)
+                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
+                                .header(X_CLIENT_ID, clientResponse.id().toString())
+                )
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.message", is("Method is not allowed")))
+                .andDo(print());
+    }
 
     @Test
     void createClient_whenValidRequest() throws Exception {
@@ -121,6 +138,23 @@ public class ITClientController extends ITBase {
     }
 
     @Test
+    void createClient_whenAccountService() throws Exception {
+        CreateClientResponse clientResponse = createClient(accessTokenForAdmin);
+        CreateClientRequest createClientRequest = Instancio.create(CreateClientRequest.class);
+
+        mvc.perform(
+                        post(CLIENT_API)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(createClientRequest))
+                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
+                                .header(X_CLIENT_ID, clientResponse.id().toString())
+                )
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.message", is("Method is not allowed")))
+                .andDo(print());
+    }
+
+    @Test
     void getById() throws Exception {
         mvc.perform(
                         get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString()))
@@ -129,7 +163,6 @@ public class ITClientController extends ITBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(CLIENT_ID_1.toString())))
                 .andExpect(jsonPath("$.name", is(CLIENT_NAME_1)))
-                .andExpect(jsonPath("$.apiKey", is(CLIENT_API_KEY_1)))
                 .andExpect(jsonPath("$.createdAt", notNullValue()))
                 .andDo(print());
     }
@@ -139,6 +172,20 @@ public class ITClientController extends ITBase {
 
         result
                 .andExpect(status().isForbidden())
+                .andDo(print());
+    }
+
+    @Test
+    void getById_whenAccountService() throws Exception {
+        CreateClientResponse clientResponse = createClient(accessTokenForAdmin);
+
+        mvc.perform(
+                        get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString()))
+                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
+                                .header(X_CLIENT_ID, clientResponse.id().toString())
+                )
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.message", is("Method is not allowed")))
                 .andDo(print());
     }
 

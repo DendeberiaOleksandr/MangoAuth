@@ -6,8 +6,10 @@ import org.mango.auth.server.dto.client.CreateClientResponse;
 import org.mango.auth.server.dto.key.SecretKey;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.UserClientRole;
+import org.mango.auth.server.enums.AccountType;
 import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.exception.NotFoundException;
+import org.mango.auth.server.exception.UnsupportedException;
 import org.mango.auth.server.mapper.ClientMapper;
 import org.mango.auth.server.repository.ClientRepository;
 import org.mango.auth.server.security.UserDetailsImpl;
@@ -39,6 +41,7 @@ public class ClientServiceImpl implements ClientService {
     @Transactional
     @Override
     public CreateClientResponse create(CreateClientRequest request, UserDetailsImpl userDetails) {
+        validateUserAccountAccess(userDetails);
         SecretKey secretKey = secretKeyService.generate();
 
         Client client = clientMapper.map(request, secretKey);
@@ -50,6 +53,12 @@ public class ClientServiceImpl implements ClientService {
         userClientRoleService.save(usersClient);
 
         return clientMapper.mapToResponse(client, secretKey);
+    }
+
+    private void validateUserAccountAccess(UserDetailsImpl userDetails) {
+        if (AccountType.SERVICE.equals(userDetails.getAccountType())) {
+            throw new UnsupportedException("Method is not allowed");
+        }
     }
 
     @Transactional

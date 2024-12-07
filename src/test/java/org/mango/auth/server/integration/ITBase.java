@@ -71,7 +71,7 @@ public class ITBase {
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse("postgres:15.1"));
 
     @BeforeEach
-    void setUp() {
+    protected void setUp() {
         objectMapper.registerModule(new JavaTimeModule());
     }
 
@@ -89,13 +89,18 @@ public class ITBase {
     protected CreateClientResponse createClient() {
         createUser(ADMIN_USER_EMAIL, "password123",  UserStatus.ACTIVE, Role.ADMIN);
         String token = createAndReturnAccessToken(ADMIN_USER_EMAIL, "password123", CLIENT_ID_1);
+        return createClient(token);
+    }
+
+    @SneakyThrows
+    protected CreateClientResponse createClient(String adminAccessToken) {
         CreateClientRequest createClientRequest = new CreateClientRequest(Instancio.create(String.class));
 
         String jsonResponse = mvc.perform(
                 post(CLIENT_API)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createClientRequest))
-                        .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + token)
+                        .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + adminAccessToken)
         ).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
         return objectMapper.readValue(jsonResponse, CreateClientResponse.class);
     }

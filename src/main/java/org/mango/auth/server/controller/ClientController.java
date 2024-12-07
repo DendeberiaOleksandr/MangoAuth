@@ -39,8 +39,8 @@ public class ClientController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<UserClientRoleLightDto>> getUserClientsWhereIsAdminOrOwner(Authentication authentication) {
-        String email = ( (UserDetailsImpl) authentication.getPrincipal()).getEmail();
-        return ResponseEntity.ok(userClientRoleService.getUserClientsWhereIsAdminOrOwner(email));
+        UserDetailsImpl userDetails = ( (UserDetailsImpl) authentication.getPrincipal());
+        return ResponseEntity.ok(userClientRoleService.getUserClientsWhereIsAdminOrOwner(userDetails));
     }
 
     @PreAuthorize("isAuthenticated()")

@@ -15,4 +15,5 @@ public class ErrorCodes {
     public static final String SERVER_ERROR = "serverError";
     public static final String INVALID_CREDENTIALS_ERROR = "invalidCredentials";
     public static final String INVALID_PARAMETER_ERROR = "invalidParameter";
+    public static final String UNSUPPORTED_ERROR = "unsupported";
 }

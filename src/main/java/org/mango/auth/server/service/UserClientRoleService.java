@@ -15,7 +15,7 @@ import java.util.UUID;
 
 public interface UserClientRoleService {
     Page<UserClientRole> findAllByClientId(UUID clientId, Pageable pageable);
-    List<UserClientRoleLightDto> getUserClientsWhereIsAdminOrOwner(String email);
+    List<UserClientRoleLightDto> getUserClientsWhereIsAdminOrOwner(UserDetailsImpl userDetails);
     UserClientRole save(UserClientRole userClientRole);
     Optional<UserClientRole> findByUserEmailAndClientId(String email, UUID clientId);
     Optional<UserClientRole> findByUserEmailAndClientName(String email, String clientName);
