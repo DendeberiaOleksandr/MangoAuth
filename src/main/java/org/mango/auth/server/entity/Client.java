@@ -36,8 +36,8 @@ public class Client {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "api_key")
-    private String apiKey;
+    @Column(name = "secret_key")
+    private String secretKey;
 
     @OneToMany(mappedBy = "client", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<UserClientRole> userRoles = new ArrayList<>();

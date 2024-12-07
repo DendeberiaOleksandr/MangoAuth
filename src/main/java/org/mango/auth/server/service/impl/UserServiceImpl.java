@@ -4,17 +4,17 @@ import lombok.AllArgsConstructor;
 import org.mango.auth.server.dto.user.UserLightDto;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
+import org.mango.auth.server.enums.AccountType;
 import org.mango.auth.server.enums.Role;
+import org.mango.auth.server.exception.InvalidParameterException;
 import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.mapper.UserMapper;
-import org.mango.auth.server.repository.UserClientRoleRepository;
 import org.mango.auth.server.repository.UserRepository;
 import org.mango.auth.server.security.UserDetailsImpl;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.mango.auth.server.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +40,14 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     @Override
     public Page<UserLightDto> search(UUID clientId, UserDetailsImpl userDetails,  Pageable pageable) {
+        if (AccountType.USER.equals(userDetails.getAccountType())) {
+            if (clientId == null) {
+                throw new InvalidParameterException("clientId is required");
+            }
+        } else {
+            clientId = userDetails.getClient().getId();
+        }
+
         validateAccessForClient(userDetails, clientId);
 
         Page<UserClientRole> users = userClientRoleService.findAllByClientId(clientId, pageable);
@@ -47,10 +55,12 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateAccessForClient(UserDetailsImpl userDetails, UUID clientId) {
-        List<UserClientRole> userClientRoles = userClientRoleService.findAllByUserEmailAndClientIdAndRoleIn(
-                userDetails.getEmail(), clientId, List.of(Role.ADMIN, Role.OWNER));
-        if (userClientRoles.isEmpty()) {
-            throw new NotFoundException("Client %s does not exist".formatted(clientId.toString()));
+        if (AccountType.USER.equals(userDetails.getAccountType())) {
+            List<UserClientRole> userClientRoles = userClientRoleService.findAllByUserEmailAndClientIdAndRoleIn(
+                    userDetails.getEmail(), clientId, List.of(Role.ADMIN, Role.OWNER));
+            if (userClientRoles.isEmpty()) {
+                throw new NotFoundException("Client %s does not exist".formatted(clientId.toString()));
+            }
         }
     }
 

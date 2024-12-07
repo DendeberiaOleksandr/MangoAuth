@@ -1,11 +1,12 @@
 package org.mango.auth.server.exception;
 
-import static org.mango.auth.server.util.ErrorCodes.INVALID_TOKEN_ERROR;
+import java.util.Map;
 
-public class InvalidTokenException extends ApiException {
+import static org.mango.auth.server.util.ErrorCodes.INVALID_PARAMETER_ERROR;
 
-    public InvalidTokenException(String message) {
-        super(message, message, INVALID_TOKEN_ERROR, 401, null);
+public class InvalidParameterException extends ApiException {
+    public InvalidParameterException(String message) {
+        super(message, message, INVALID_PARAMETER_ERROR, 400, Map.of());
     }
 
     @Override

@@ -5,8 +5,10 @@ import org.mango.auth.server.dto.client.ClientDto;
 import org.mango.auth.server.dto.client.UserClientRoleLightDto;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
+import org.mango.auth.server.enums.AccountType;
 import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.exception.NotFoundException;
+import org.mango.auth.server.exception.UnsupportedException;
 import org.mango.auth.server.mapper.ClientMapper;
 import org.mango.auth.server.mapper.UserClientRoleMapper;
 import org.mango.auth.server.repository.UserClientRoleRepository;
@@ -73,6 +75,7 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
     @Transactional(readOnly = true)
     @Override
     public ClientDto getById(UUID id, UserDetailsImpl userDetails) {
+        validateUserAccountAccess(userDetails);
         List<UserClientRole> userClientRoles =
                 userClientRoleRepository.findAllByUser_EmailAndClient_IdAndRoleIn(userDetails.getEmail(), id, List.of(Role.OWNER, Role.ADMIN));
 
@@ -98,9 +101,16 @@ public class UserClientRoleServiceImpl implements UserClientRoleService {
 
     @Transactional(readOnly = true)
     @Override
-    public List<UserClientRoleLightDto> getUserClientsWhereIsAdminOrOwner(String email) {
-        List<UserClientRole> userClientRoles = userClientRoleRepository.findAllByUser_EmailAndRoleIn(email, List.of(Role.ADMIN, Role.OWNER));
+    public List<UserClientRoleLightDto> getUserClientsWhereIsAdminOrOwner(UserDetailsImpl userDetails) {
+        validateUserAccountAccess(userDetails);
+        List<UserClientRole> userClientRoles = userClientRoleRepository.findAllByUser_EmailAndRoleIn(userDetails.getEmail(), List.of(Role.ADMIN, Role.OWNER));
         return userClientRoles.stream().map(userClientRoleMapper::map).toList();
+    }
+
+    private void validateUserAccountAccess(UserDetailsImpl userDetails) {
+        if (AccountType.SERVICE.equals(userDetails.getAccountType())) {
+            throw new UnsupportedException("Method is not allowed");
+        }
     }
 
     @Override

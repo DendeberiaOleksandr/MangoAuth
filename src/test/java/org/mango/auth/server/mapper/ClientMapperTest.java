@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mango.auth.server.dto.client.ClientDto;
 import org.mango.auth.server.dto.client.CreateClientRequest;
+import org.mango.auth.server.dto.client.CreateClientResponse;
+import org.mango.auth.server.dto.key.SecretKey;
 import org.mango.auth.server.entity.Client;
 import org.mapstruct.factory.Mappers;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,13 +22,13 @@ class ClientMapperTest {
     @Test
     void map() {
         CreateClientRequest createClientRequest = Instancio.create(CreateClientRequest.class);
-        String apiKey = "apiKey";
+        SecretKey secretKey = Instancio.create(SecretKey.class);
 
-        Client client = mapper.map(createClientRequest, apiKey);
+        Client client = mapper.map(createClientRequest, secretKey);
 
         assertNotNull(client);
         assertEquals(createClientRequest.name(), client.getName());
-        assertEquals(apiKey, client.getApiKey());
+        assertEquals(secretKey.encryptedKey(), client.getSecretKey());
         assertNotNull(client.getCreatedAt());
     }
 
@@ -39,8 +41,21 @@ class ClientMapperTest {
         assertNotNull(dto);
         assertEquals(client.getId(), dto.getId());
         assertEquals(client.getName(), dto.getName());
-        assertEquals(client.getApiKey(), dto.getApiKey());
         assertEquals(client.getCreatedAt(), dto.getCreatedAt());
+    }
+
+    @Test
+    void mapToResponse() {
+        Client client = Instancio.create(Client.class);
+        SecretKey secretKey = Instancio.create(SecretKey.class);
+
+        CreateClientResponse response = mapper.mapToResponse(client, secretKey);
+
+        assertNotNull(response);
+        assertEquals(client.getId(), response.id());
+        assertEquals(client.getName(), response.name());
+        assertEquals(client.getCreatedAt(), response.createdAt());
+        assertEquals(secretKey.key(), response.secretKey());
     }
 
 }
