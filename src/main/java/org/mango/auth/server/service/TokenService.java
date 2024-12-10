@@ -16,5 +16,5 @@ public interface TokenService {
     TokenResponse generateToken(TokenRequest request, String userAgent);
     TokenResponse refreshAccessToken(RefreshTokenRequest request);
     void revokeRefreshToken(String email, UUID clientId);
-    IntrospectTokenResponse introspect(UserDetailsImpl userDetails);
+    IntrospectTokenResponse introspect(String accessToken, UserDetailsImpl userDetails);
 }

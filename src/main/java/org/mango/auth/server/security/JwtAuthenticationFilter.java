@@ -12,6 +12,7 @@ import org.mango.auth.server.service.impl.UserDetailsServiceImpl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -45,12 +46,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 throw new BadCredentialsException("Invalid JWT token");
             }
 
-            var claims = jwtService.getClaimsFromToken(token);
-            String email = claims.getSubject();
-            String clientId = claims.get("CLIENT_ID", String.class);
-
-            if (email != null && clientId != null) {
-                UserDetailsImpl userDetails = (UserDetailsImpl) userDetailsService.loadUserByUsername(email + "--" + clientId);
+            UserDetails userDetails = userDetailsService.loadByAccessToken(token);
+            if (userDetails != null) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

@@ -68,9 +68,10 @@ public class TokenController {
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping(ApiPaths.TOKEN_INTROSPECT)
-    public ResponseEntity<IntrospectTokenResponse> introspect(Authentication authentication) {
+    public ResponseEntity<IntrospectTokenResponse> introspect(@RequestParam(value = "accessToken", required = false) String accessToken,
+                                                              Authentication authentication) {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        IntrospectTokenResponse introspect = tokenService.introspect(userDetails);
+        IntrospectTokenResponse introspect = tokenService.introspect(accessToken, userDetails);
         return ResponseEntity.ok(introspect);
     }
 }

@@ -1,21 +1,41 @@
 package org.mango.auth.server.service.impl;
 
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.mango.auth.server.entity.UserClientRole;
 import org.mango.auth.server.repository.UserClientRoleRepository;
 import org.mango.auth.server.security.UserDetailsImpl;
+import org.mango.auth.server.service.JwtService;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserClientRoleRepository userClientRoleRepository;
+    private final JwtService jwtService;
+
+    public UserDetails loadByAccessToken(String accessToken) {
+        try {
+            Claims claims = jwtService.getClaimsFromToken(accessToken);
+            String email = claims.getSubject();
+            String clientId = claims.get("CLIENT_ID", String.class);
+            if (StringUtils.hasText(email) && StringUtils.hasText(clientId)) {
+                return loadUserByUsername(email + "--" + clientId);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+        return null;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

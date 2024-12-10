@@ -9,11 +9,14 @@ import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.RefreshToken;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
+import org.mango.auth.server.enums.AccountType;
 import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.exception.ExpiredRefreshTokenException;
+import org.mango.auth.server.exception.InvalidParameterException;
 import org.mango.auth.server.exception.InvalidRefreshTokenException;
 import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.exception.UserIsNotVerifiedException;
+import org.mango.auth.server.exception.ValidationException;
 import org.mango.auth.server.mapper.RefreshTokenMapper;
 import org.mango.auth.server.mapper.TokenMapper;
 import org.mango.auth.server.repository.RefreshTokenRepository;
@@ -22,9 +25,12 @@ import org.mango.auth.server.service.JwtService;
 import org.mango.auth.server.service.TokenService;
 import org.mango.auth.server.service.UserClientRoleService;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -35,13 +41,13 @@ import static org.mango.auth.server.util.DateTimeUtils.convertMillisToLocalDateT
 @Service
 @RequiredArgsConstructor
 public class TokenServiceImpl implements TokenService {
-
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final UserClientRoleService userClientRoleService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RefreshTokenMapper refreshTokenMapper;
     private final TokenMapper tokenMapper;
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Override
     @Transactional
@@ -116,7 +122,18 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public IntrospectTokenResponse introspect(UserDetailsImpl userDetails) {
+    public IntrospectTokenResponse introspect(String accessToken, UserDetailsImpl userDetails) {
+        if (AccountType.SERVICE.equals(userDetails.getAccountType())) {
+            if (!StringUtils.hasText(accessToken)) {
+                throw new ValidationException("accessToken is required");
+            }
+            UserDetailsImpl details = (UserDetailsImpl) userDetailsService.loadByAccessToken(accessToken);
+            if (details == null ||!details.getClient().getId().equals(userDetails.getClient().getId())) {
+                throw new ValidationException("Invalid accessToken provided");
+            }
+            userDetails = details;
+        }
+
         return tokenMapper.map(userDetails);
     }
 
