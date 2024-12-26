@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.hamcrest.Matchers.is;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.security.JwtAuthenticationFilter.BEARER_PREFIX;
-import static org.mango.auth.server.security.ServiceAccountAuthenticationFilter.X_CLIENT_ID;
 import static org.mango.auth.server.util.ApiPaths.USER_API;
 import static org.mango.auth.server.util.ErrorCodes.INVALID_CREDENTIALS_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.INVALID_PARAMETER_ERROR;
@@ -30,8 +29,7 @@ public class ITUserController extends ITBase {
 
         mvc.perform(
                         get(USER_API)
-                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
-                                .header(X_CLIENT_ID, clientResponse.id())
+                                .header(HttpHeaders.AUTHORIZATION, clientResponse.id() + ":" + clientResponse.apiKey())
                 )
                 .andExpect(status().isOk())
                 .andDo(print());
@@ -44,8 +42,7 @@ public class ITUserController extends ITBase {
 
         mvc.perform(
                         get(USER_API)
-                                .header(HttpHeaders.AUTHORIZATION, "Invalid secret")
-                                .header(X_CLIENT_ID, clientResponse.id())
+                                .header(HttpHeaders.AUTHORIZATION, clientResponse.id() + ":InvalidSecret")
                 )
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code", is(INVALID_CREDENTIALS_ERROR)))

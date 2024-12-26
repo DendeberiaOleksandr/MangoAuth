@@ -6,6 +6,7 @@ import org.mango.auth.server.dto.client.CreateClientRequest;
 import org.mango.auth.server.dto.client.ClientDto;
 import org.mango.auth.server.dto.client.CreateClientResponse;
 import org.mango.auth.server.dto.client.UserClientRoleLightDto;
+import org.mango.auth.server.exception.NotFoundException;
 import org.mango.auth.server.security.UserDetailsImpl;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.service.ClientService;

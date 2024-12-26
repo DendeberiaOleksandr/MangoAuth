@@ -1,8 +1,6 @@
 CREATE TABLE client (
     id UUID PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    api_key VARCHAR(255),
-    api_secret VARCHAR(255)
+    name VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE users (

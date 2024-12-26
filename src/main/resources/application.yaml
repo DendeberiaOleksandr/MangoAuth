@@ -2,8 +2,8 @@ app:
   token:
     secret: 5mF9pmpj3pyveaVWdSqvSJml8JAqsR7S0mjOSrqi5LoPqeDqjh+JAxg9zfLu3dhv
   mail:
-    username: test
-    password: test
+    username: dendeberiaoleksandr@gmail.com
+    password: ncxn utha hcfp osei
 
 spring:
   jackson:

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mango.auth.server.dto.client.ClientDto;
 import org.mango.auth.server.dto.client.CreateClientRequest;
 import org.mango.auth.server.dto.client.CreateClientResponse;
-import org.mango.auth.server.dto.key.SecretKey;
 import org.mango.auth.server.entity.Client;
 import org.mapstruct.factory.Mappers;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,14 +21,17 @@ class ClientMapperTest {
     @Test
     void map() {
         CreateClientRequest createClientRequest = Instancio.create(CreateClientRequest.class);
-        SecretKey secretKey = Instancio.create(SecretKey.class);
+        String rsaPublicKey = Instancio.create(String.class);
+        String rsaPrivateKey = Instancio.create(String.class);
+        String apiKey = Instancio.create(String.class);
 
-        Client client = mapper.map(createClientRequest, secretKey);
+        Client client = mapper.map(createClientRequest, rsaPublicKey, rsaPrivateKey, apiKey);
 
         assertNotNull(client);
         assertEquals(createClientRequest.name(), client.getName());
-        assertEquals(secretKey.encryptedKey(), client.getSecretKey());
         assertNotNull(client.getCreatedAt());
+        assertEquals(rsaPublicKey, client.getPublicKey());
+        assertEquals(rsaPrivateKey, client.getPrivateKey());
     }
 
     @Test
@@ -47,15 +49,15 @@ class ClientMapperTest {
     @Test
     void mapToResponse() {
         Client client = Instancio.create(Client.class);
-        SecretKey secretKey = Instancio.create(SecretKey.class);
+        String publicKey = Instancio.create(String.class);
+        String apiKey = Instancio.create(String.class);
 
-        CreateClientResponse response = mapper.mapToResponse(client, secretKey);
+        CreateClientResponse response = mapper.mapToResponse(client, publicKey, apiKey);
 
         assertNotNull(response);
         assertEquals(client.getId(), response.id());
         assertEquals(client.getName(), response.name());
         assertEquals(client.getCreatedAt(), response.createdAt());
-        assertEquals(secretKey.key(), response.secretKey());
     }
 
 }

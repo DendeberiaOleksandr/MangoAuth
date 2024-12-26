@@ -11,7 +11,8 @@ import org.mango.auth.server.enums.AccountType;
 import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.exception.BadCredentialsException;
 import org.mango.auth.server.service.ClientService;
-import org.mango.auth.server.service.SecretKeyService;
+import org.mango.auth.server.service.KeyService;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -27,32 +28,36 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ServiceAccountAuthenticationFilter extends OncePerRequestFilter {
 
-    public static final String X_CLIENT_ID = "X-Client-Id";
     private final ClientService clientService;
-    private final SecretKeyService secretKeyService;
+    private final KeyService keyService;
     private final ApiErrorHandler apiErrorHandler;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        String clientIdHeader = request.getHeader(X_CLIENT_ID);
-        if (!StringUtils.hasText(authHeader) || !StringUtils.hasText(clientIdHeader)) {
+        if (!StringUtils.hasText(authHeader)) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            Client client = clientService.getById(UUID.fromString(clientIdHeader));
+            Pair<String, String> clientIdAndApiKey = parseClientIdAndApiKey(authHeader);
 
-            boolean matches = secretKeyService.matches(authHeader, client.getSecretKey());
-            if (matches) {
-                UserDetailsImpl userDetails = new UserDetailsImpl(null, client, Role.ADMIN, AccountType.SERVICE);
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            } else {
-                throw new BadCredentialsException("Invalid credentials provided for client: %s".formatted(clientIdHeader));
+            if (clientIdAndApiKey != null) {
+                UUID clientId = UUID.fromString(clientIdAndApiKey.getFirst());
+                Client client = clientService.getById(clientId);
+                String apiKey = clientIdAndApiKey.getSecond();
+
+                boolean isValid = keyService.validateApiKey(apiKey, client.getApiKeyHash());
+                if (isValid) {
+                    UserDetailsImpl userDetails = new UserDetailsImpl(null, client, Role.ADMIN, AccountType.SERVICE);
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    throw new BadCredentialsException("Invalid credentials provided");
+                }
             }
 
         } catch (Exception e) {
@@ -61,5 +66,13 @@ public class ServiceAccountAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private Pair<String, String> parseClientIdAndApiKey(String authorizationHeader) {
+        String[] split = authorizationHeader.split(":");
+        if (split.length == 2) {
+            return Pair.of(split[0], split[1]);
+        }
+        return null;
     }
 }

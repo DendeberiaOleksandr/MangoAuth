@@ -20,7 +20,7 @@ public class MailGeneratorServiceImpl implements MailGeneratorService {
     private static final String EMAIL_PATTERN = "EMAIL";
     private static final String CODE_PATTERN = "CODE";
     private static final String CLIENT_NAME_PATTERN = "CLIENT_NAME";
-    private static final String ACTIVATION_EMAIL_PATH = "/mail/activation-email.html";
+    private static final String ACTIVATION_EMAIL_PATH = "mail/activation-email.html";
 
     private final ResourceLoader resourceLoader;
 
@@ -38,7 +38,7 @@ public class MailGeneratorServiceImpl implements MailGeneratorService {
     private String readHtml(String file) {
         Resource resource = resourceLoader.getResource("classpath:" + file);
         try {
-            return new String(Files.readAllBytes(resource.getFile().toPath()), StandardCharsets.UTF_8);
+            return new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             log.error("Failed to read file: %s".formatted(file), e);
             throw new RuntimeException(e);

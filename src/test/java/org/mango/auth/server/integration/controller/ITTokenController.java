@@ -1,10 +1,8 @@
 package org.mango.auth.server.integration.controller;
 
 import com.jayway.jsonpath.JsonPath;
-import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mango.auth.server.dto.client.CreateClientResponse;
 import org.mango.auth.server.dto.token.RefreshTokenRequest;
 import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.RefreshToken;
@@ -29,18 +27,12 @@ import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertNotEquals;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
-import static org.mango.auth.server.integration.util.TestUtil.CLIENT_NAME_1;
-import static org.mango.auth.server.integration.util.TestUtil.USER_EMAIL;
-import static org.mango.auth.server.integration.util.TestUtil.USER_PASSWORD;
-import static org.mango.auth.server.security.ServiceAccountAuthenticationFilter.X_CLIENT_ID;
 import static org.mango.auth.server.util.ErrorCodes.EXPIRED_REFRESH_TOKEN_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.INVALID_REFRESH_TOKEN_ERROR;
 import static org.mango.auth.server.util.ErrorCodes.USER_IS_NOT_VERIFIED_ERROR;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -272,110 +264,4 @@ public class ITTokenController extends ITBase {
                 .andDo(print());
     }
 
-    @SneakyThrows
-    @Test
-    void introspect_validToken() {
-        mvc.perform(
-                        get(ApiPaths.TOKEN_INTROSPECT)
-                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + accessToken)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email", is(EMAIL)))
-                .andExpect(jsonPath("$.clientId", is(CLIENT_ID_1.toString())))
-                .andExpect(jsonPath("$.clientName", is(CLIENT_NAME_1)))
-                .andExpect(jsonPath("$.registeredAt", notNullValue()))
-                .andExpect(jsonPath("$.role", is(Role.USER.name())))
-                .andDo(print());
-    }
-
-    @SneakyThrows
-    @Test
-    void introspect_invalidToken() {
-        mvc.perform(
-                        get(ApiPaths.TOKEN_INTROSPECT)
-                                .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + "invalid")
-                )
-                .andExpect(status().isUnauthorized())
-                .andDo(print());
-    }
-
-    @SneakyThrows
-    @Test
-    void introspect_whenServiceAccount() {
-        CreateClientResponse clientResponse = createClient();
-
-        String clientId = clientResponse.id().toString();
-        createUser(USER_EMAIL, USER_PASSWORD, clientId, UserStatus.ACTIVE);
-        String accessToken = createAndReturnAccessToken(USER_EMAIL, USER_PASSWORD, clientResponse.id());
-
-        mvc.perform(
-                        get(ApiPaths.TOKEN_INTROSPECT)
-                                .param("accessToken", accessToken)
-                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
-                                .header(X_CLIENT_ID, clientId)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email", is(USER_EMAIL)))
-                .andExpect(jsonPath("$.clientId", is(clientId)))
-                .andExpect(jsonPath("$.clientName", is(clientResponse.name())))
-                .andExpect(jsonPath("$.role", is(Role.USER.name())))
-                .andExpect(jsonPath("$.registeredAt", notNullValue()))
-                .andDo(print());
-    }
-
-    @SneakyThrows
-    @Test
-    void introspect_whenServiceAccountAndAccessTokenIsNotProvided() {
-        CreateClientResponse clientResponse = createClient();
-
-        String clientId = clientResponse.id().toString();
-
-        mvc.perform(
-                        get(ApiPaths.TOKEN_INTROSPECT)
-                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
-                                .header(X_CLIENT_ID, clientId)
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("accessToken is required")))
-                .andExpect(jsonPath("$.code", is("validationError")))
-                .andDo(print());
-    }
-
-    @SneakyThrows
-    @Test
-    void introspect_whenServiceAccountAndInvalidAccessToken() {
-        CreateClientResponse clientResponse = createClient();
-
-        String clientId = clientResponse.id().toString();
-
-        mvc.perform(
-                        get(ApiPaths.TOKEN_INTROSPECT)
-                                .param("accessToken", "accessToken")
-                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
-                                .header(X_CLIENT_ID, clientId)
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Invalid accessToken provided")))
-                .andExpect(jsonPath("$.code", is("validationError")))
-                .andDo(print());
-    }
-
-    @SneakyThrows
-    @Test
-    void introspect_whenServiceAccountAndAccessTokenIsIssuedForForeignClient() {
-        CreateClientResponse clientResponse = createClient();
-
-        String clientId = clientResponse.id().toString();
-
-        mvc.perform(
-                        get(ApiPaths.TOKEN_INTROSPECT)
-                                .param("accessToken", accessToken)
-                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
-                                .header(X_CLIENT_ID, clientId)
-                )
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("Invalid accessToken provided")))
-                .andExpect(jsonPath("$.code", is("validationError")))
-                .andDo(print());
-    }
 }

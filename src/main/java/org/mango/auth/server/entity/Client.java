@@ -7,7 +7,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,8 +35,14 @@ public class Client {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "secret_key")
-    private String secretKey;
+    @Column(name = "public_key")
+    private String publicKey;
+
+    @Column(name = "private_key")
+    private String privateKey;
+
+    @Column(name = "api_key_hash")
+    private String apiKeyHash;
 
     @OneToMany(mappedBy = "client", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<UserClientRole> userRoles = new ArrayList<>();

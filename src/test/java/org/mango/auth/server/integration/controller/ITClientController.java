@@ -30,11 +30,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mango.auth.server.integration.util.TestUtil.ADMIN_USER_EMAIL;
-import static org.mango.auth.server.integration.util.TestUtil.CLIENT_API_KEY_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_ID_1;
 import static org.mango.auth.server.integration.util.TestUtil.CLIENT_NAME_1;
 import static org.mango.auth.server.integration.util.TestUtil.USER_EMAIL;
-import static org.mango.auth.server.security.ServiceAccountAuthenticationFilter.X_CLIENT_ID;
 import static org.mango.auth.server.util.ApiPaths.CLIENT_API;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -102,8 +100,7 @@ public class ITClientController extends ITBase {
 
         mvc.perform(
                         get(CLIENT_API)
-                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
-                                .header(X_CLIENT_ID, clientResponse.id().toString())
+                                .header(HttpHeaders.AUTHORIZATION, clientResponse.id().toString() + ":" + clientResponse.apiKey())
                 )
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.message", is("Method is not allowed")))
@@ -127,7 +124,8 @@ public class ITClientController extends ITBase {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id", notNullValue()))
                 .andExpect(jsonPath("$.name", is(clientName)))
-                .andExpect(jsonPath("$.secretKey", notNullValue()))
+                .andExpect(jsonPath("$.apiKey", notNullValue()))
+                .andExpect(jsonPath("$.publicKey", notNullValue()))
                 .andExpect(jsonPath("$.createdAt", notNullValue()))
                 .andDo(print());
 
@@ -144,10 +142,9 @@ public class ITClientController extends ITBase {
 
         mvc.perform(
                         post(CLIENT_API)
+                                .header(HttpHeaders.AUTHORIZATION, clientResponse.id().toString() + ":" + clientResponse.apiKey())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(createClientRequest))
-                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
-                                .header(X_CLIENT_ID, clientResponse.id().toString())
                 )
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.message", is("Method is not allowed")))
@@ -181,8 +178,7 @@ public class ITClientController extends ITBase {
 
         mvc.perform(
                         get(CLIENT_API + "/%s".formatted(CLIENT_ID_1.toString()))
-                                .header(HttpHeaders.AUTHORIZATION, clientResponse.secretKey())
-                                .header(X_CLIENT_ID, clientResponse.id().toString())
+                                .header(HttpHeaders.AUTHORIZATION, clientResponse.id().toString() + ":" + clientResponse.apiKey())
                 )
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.message", is("Method is not allowed")))

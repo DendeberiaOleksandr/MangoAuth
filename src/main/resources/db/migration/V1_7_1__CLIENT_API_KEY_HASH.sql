@@ -1,0 +1,1 @@
+ALTER TABLE client ADD COLUMN IF NOT EXISTS api_key_hash TEXT;

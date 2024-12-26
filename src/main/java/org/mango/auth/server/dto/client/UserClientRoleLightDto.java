@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.mango.auth.server.enums.Role;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -17,5 +18,6 @@ public class UserClientRoleLightDto {
     private UUID id;
     private String name;
     private Role role;
+    private LocalDateTime createdAt;
 
 }

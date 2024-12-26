@@ -18,6 +18,7 @@ public interface UserClientRoleMapper {
     @Mapping(target = "id", source = "userClientRole.client.id")
     @Mapping(target = "name", source = "userClientRole.client.name")
     @Mapping(target = "role", source = "userClientRole.role")
+    @Mapping(target = "createdAt", source = "userClientRole.client.createdAt")
     UserClientRoleLightDto map(UserClientRole userClientRole);
 
 }

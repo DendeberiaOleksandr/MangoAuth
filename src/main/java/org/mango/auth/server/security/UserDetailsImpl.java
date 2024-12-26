@@ -57,10 +57,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public String getPassword() {
-        if (accountType.equals(AccountType.USER)) {
-            return user.getPassword();
-        }
-        return client.getSecretKey();
+        return null;
     }
 
     @Override

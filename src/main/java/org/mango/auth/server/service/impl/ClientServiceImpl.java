@@ -14,8 +14,9 @@ import org.mango.auth.server.mapper.ClientMapper;
 import org.mango.auth.server.repository.ClientRepository;
 import org.mango.auth.server.security.UserDetailsImpl;
 import org.mango.auth.server.service.ClientService;
-import org.mango.auth.server.service.SecretKeyService;
+import org.mango.auth.server.service.KeyService;
 import org.mango.auth.server.service.UserClientRoleService;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +29,7 @@ public class ClientServiceImpl implements ClientService {
 
     private final ClientRepository clientRepository;
     private final UserClientRoleService userClientRoleService;
-    private final SecretKeyService secretKeyService;
+    private final KeyService keyService;
     private final ClientMapper clientMapper;
 
     @Transactional(readOnly = true)
@@ -42,9 +43,12 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public CreateClientResponse create(CreateClientRequest request, UserDetailsImpl userDetails) {
         validateUserAccountAccess(userDetails);
-        SecretKey secretKey = secretKeyService.generate();
+        Pair<String, String> rsaKeysPair = keyService.generatePublicPrivateKeysPair();
+        String publicKey = rsaKeysPair.getFirst();
 
-        Client client = clientMapper.map(request, secretKey);
+        SecretKey secretKey = keyService.generateApiKey();
+
+        Client client = clientMapper.map(request, publicKey, rsaKeysPair.getSecond(), secretKey.keyHash());
         clientRepository.save(client);
 
         UserClientRole usersClient = UserClientRole.builder().client(client).user(userDetails.getUser()).role(Role.OWNER).build();
@@ -52,7 +56,7 @@ public class ClientServiceImpl implements ClientService {
 
         userClientRoleService.save(usersClient);
 
-        return clientMapper.mapToResponse(client, secretKey);
+        return clientMapper.mapToResponse(client, publicKey, secretKey.key());
     }
 
     private void validateUserAccountAccess(UserDetailsImpl userDetails) {
