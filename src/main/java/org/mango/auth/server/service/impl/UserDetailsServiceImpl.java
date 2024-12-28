@@ -1,6 +1,5 @@
 package org.mango.auth.server.service.impl;
 
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mango.auth.server.entity.UserClientRole;
@@ -25,10 +24,10 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     public UserDetails loadByAccessToken(String accessToken) {
         try {
-            Claims claims = jwtService.getClaimsFromToken(accessToken);
-            String email = claims.getSubject();
-            String clientId = claims.get("CLIENT_ID", String.class);
-            if (StringUtils.hasText(email) && StringUtils.hasText(clientId)) {
+            JwtServiceImpl.TokenPayload tokenPayload = jwtService.getTokenPayload(accessToken);
+            String email = tokenPayload.getUserEmail();
+            UUID clientId = tokenPayload.getClientId();
+            if (StringUtils.hasText(email) && clientId != null) {
                 return loadUserByUsername(email + "--" + clientId);
             }
         } catch (Exception e) {

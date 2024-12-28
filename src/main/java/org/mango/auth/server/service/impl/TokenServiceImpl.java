@@ -8,6 +8,7 @@ import org.mango.auth.server.entity.Client;
 import org.mango.auth.server.entity.RefreshToken;
 import org.mango.auth.server.entity.User;
 import org.mango.auth.server.entity.UserClientRole;
+import org.mango.auth.server.enums.Role;
 import org.mango.auth.server.enums.UserStatus;
 import org.mango.auth.server.exception.ExpiredRefreshTokenException;
 import org.mango.auth.server.exception.InvalidRefreshTokenException;
@@ -55,24 +56,25 @@ public class TokenServiceImpl implements TokenService {
             throw new BadCredentialsException("Invalid password");
         }
 
+        Client client = userEmailAndClientId.getClient();
+        Role role = userEmailAndClientId.getRole();
         Optional<RefreshToken> existingTokenOpt = refreshTokenRepository.findByUser_EmailAndClient_Id(email, clientId);
         if (existingTokenOpt.isPresent()) {
             RefreshToken existingToken = existingTokenOpt.get();
 
             if (existingToken.getExpiryAt().isAfter(LocalDateTime.now())) {
-                return jwtService.generateTokens(user,userEmailAndClientId.getClient(), existingToken);
+                return jwtService.generateTokens(user, client, role, existingToken);
             } else {
                 refreshTokenRepository.delete(existingToken);
             }
         }
 
-        TokenResponse tokenResponse = jwtService.generateTokens(user, userEmailAndClientId.getClient());
+        TokenResponse tokenResponse = jwtService.generateTokens(user, client, role);
 
         LocalDateTime dateTimeIssuedAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().issuedAt());
         LocalDateTime dateTimeExpiresAt = convertMillisToLocalDateTime(tokenResponse.refreshToken().expiresAt());
         saveRefreshToken(
-                user,
-                userEmailAndClientId.getClient(),
+                user, client,
                 userAgent,
                 tokenResponse.refreshToken().token(),
                 dateTimeIssuedAt,
@@ -93,8 +95,9 @@ public class TokenServiceImpl implements TokenService {
 
         User user = refreshToken.getUser();
         Client client = refreshToken.getClient();
+        UserClientRole userClientRole = userClientRoleService.getByUserEmailAndClientId(user.getEmail(), client.getId());
 
-        return jwtService.generateTokens(user, client, refreshToken);
+        return jwtService.generateTokens(user, client, userClientRole.getRole());
     }
 
     @Override
